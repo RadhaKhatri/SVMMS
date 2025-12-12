@@ -101,16 +101,16 @@ console.log("Selected Role:", role);
   className="w-full"
 >
   <TabsList className="grid w-full grid-cols-4 bg-secondary/50">
-    <TabsTrigger value="customer" className="text-xs flex flex-col">
+    <TabsTrigger value="customer" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs flex flex-col">
       <span>Customer</span>
     </TabsTrigger>
-    <TabsTrigger value="mechanic" className="text-xs flex flex-col">
+    <TabsTrigger value="mechanic" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs flex flex-col">
       <span>Mechanic</span>
     </TabsTrigger>
-    <TabsTrigger value="service_center_manager" className="text-xs flex flex-col">
+    <TabsTrigger value="service_center_manager" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs flex flex-col">
       <span>Manager</span>
     </TabsTrigger>
-    <TabsTrigger value="admin" className="text-xs flex flex-col">
+    <TabsTrigger value="admin" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs flex flex-col">
       <span>Admin</span>
     </TabsTrigger>
   </TabsList>
