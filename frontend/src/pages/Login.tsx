@@ -13,20 +13,76 @@ const Login = () => {
   const { toast } = useToast();
   const [role, setRole] = useState("customer");
 
-  const handleLogin = (e: React.FormEvent, selectedRole: string) => {
-    e.preventDefault();
+  const handleLogin = async (e: React.FormEvent, selectedRole: string) => {
+  e.preventDefault();
+
+  console.log("🔹 Login initiated");
+  console.log("Selected role:", selectedRole);
+
+  const email = (document.getElementById(`email-${selectedRole}`) as HTMLInputElement).value;
+  const password = (document.getElementById(`password-${selectedRole}`) as HTMLInputElement).value;
+
+  console.log("Email entered:", email);
+  console.log("Password entered:", password ? "••••••••" : "(empty)");
+
+  try {
+    console.log("🔹 Sending request to server...");
+
+    const res = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, role: selectedRole }),
+    });
+
+    console.log("🔹 Server responded with status:", res.status);
+
+    let data;
+    try {
+      data = await res.json();
+      console.log("🔹 Response JSON:", data);
+    } catch (err) {
+      console.log("❌ Failed to parse JSON response");
+    }
+
+    if (!res.ok) {
+      console.log("❌ Login failed:", data?.message);
+      toast({
+        title: "Login Failed",
+        description: data?.message || "Unknown error",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log("✅ Login success. Token received:", data.token);
+
+    localStorage.setItem("token", data.token);
+
     toast({
       title: "Login Successful",
-      description: `Logging in as ${selectedRole}...`,
+      description: `Logged in as ${selectedRole}`,
     });
-    
+
+    // Redirect based on role  
+    console.log("🔹 Redirecting user to dashboard...");
+
     setTimeout(() => {
       if (selectedRole === "customer") navigate("/dashboard");
       else if (selectedRole === "mechanic") navigate("/mechanic/dashboard");
-      else if (selectedRole === "manager") navigate("/manager/dashboard");
+      else if (selectedRole === "service_center_manager") navigate("/manager/dashboard");
       else if (selectedRole === "admin") navigate("/admin/dashboard");
     }, 500);
-  };
+
+  } catch (error) {
+    console.log("❌ ERROR in login request:", error);
+    toast({
+      title: "Error",
+      description: "Something went wrong!",
+      variant: "destructive",
+    });
+  }
+};
+
 
   const roleIcons = {
     customer: User,
