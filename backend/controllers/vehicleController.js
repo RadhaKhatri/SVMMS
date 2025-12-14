@@ -102,3 +102,19 @@ export const getVehicleServices = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getMyVehicles = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      "SELECT * FROM vehicles WHERE owner_id = $1",
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch vehicles" });
+  }
+};

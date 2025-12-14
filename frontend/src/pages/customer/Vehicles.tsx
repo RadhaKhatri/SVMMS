@@ -14,9 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Calendar, Car, Gauge, Plus, Wrench, Trash, Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
+
 
 const Vehicles = () => {
   const [vehicles, setVehicles] = useState([]);
+  const { toast } = useToast(); 
   const [form, setForm] = useState({
     vin: "",
     make: "",
@@ -30,6 +34,8 @@ const Vehicles = () => {
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [services, setServices] = useState({});
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
+
 
   const [isAddOpen, setIsAddOpen] = useState(false);
 const [isEditOpen, setIsEditOpen] = useState(false);
@@ -77,6 +83,10 @@ const [isEditOpen, setIsEditOpen] = useState(false);
           form,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        toast({
+    title: "Vehicle Updated ✅",
+    description: "Your vehicle details were updated successfully",
+  });
         setMessage(res.data.message);
         setEditingVehicle(null);
       } else {
@@ -85,6 +95,10 @@ const [isEditOpen, setIsEditOpen] = useState(false);
           form,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        toast({
+    title: "Vehicle Updated ✅",
+    description: "Your vehicle details were added successfully",
+  });
         setMessage(res.data.message);
       }
       setForm({ vin: "", make: "", model: "", year: "", engine_type: "", mileage: "" });
@@ -136,9 +150,19 @@ const [isEditOpen, setIsEditOpen] = useState(false);
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessage(res.data.message);
+      toast({
+  title: "Vehicle Deleted 🗑️",
+  description: "The vehicle was removed successfully",
+  variant: "destructive",
+});
       fetchVehicles();
     } catch (error: any) {
       setMessage(error.response?.data?.message || "Error deleting vehicle");
+      toast({
+  title: "Action Failed ❌",
+  description: error.response?.data?.message || "Server error",
+  variant: "destructive",
+});
     }
   };
 
@@ -153,6 +177,12 @@ const [isEditOpen, setIsEditOpen] = useState(false);
       setMessage("Failed to fetch services");
     }
   };
+
+  const handleBookService = (vehicleId: number) => {
+  navigate("/customer/bookings", {
+    state: { vehicleId }
+  });
+};
 
   return (
     <DashboardLayout role="customer">
@@ -232,6 +262,7 @@ const [isEditOpen, setIsEditOpen] = useState(false);
 </Dialog>
 
         </div>
+        <p className="text-muted-foreground mt-1">Manage your registered vehicle</p>
 
         {/* Vehicle Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -270,10 +301,19 @@ const [isEditOpen, setIsEditOpen] = useState(false);
                   <Button variant="destructive" size="sm" onClick={() => handleDelete(v.id)} className="flex-1 flex items-center gap-1">
                     <Trash className="h-4 w-4"/> Delete
                   </Button>
-                  <Button size="sm" className="flex-1 flex items-center gap-1"
-                    onClick={() => fetchServices(v.id)}>
-                    <Wrench className="h-4 w-4"/> Services
+                 <Button
+                    size="sm"
+                    className="flex-1 flex items-center gap-1"
+                    onClick={() =>
+                      navigate("/bookings", {
+                        state: { vehicleId: v.id }
+                      })
+                    }
+                  >
+                    <Wrench className="h-4 w-4" />
+                    Book Services
                   </Button>
+
                 </div>
 
                 {/* Vehicle Services */}

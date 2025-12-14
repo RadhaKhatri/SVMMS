@@ -5,6 +5,8 @@ import authRoutes from "./routes/authRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import vehicleRoutes from "./routes/vehicleRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
+import serviceRoutes from "./routes/serviceRoutes.js";
+import serviceCenterRoutes from "./routes/serviceCenterRoutes.js";
 
 
 dotenv.config();
@@ -23,6 +25,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/services", serviceRoutes);
+app.use("/api/service-centers", serviceCenterRoutes);
 
 app.get("/", (req, res) => res.send("Server running!"));
 

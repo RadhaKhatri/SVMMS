@@ -6,7 +6,8 @@ import {
   updateVehicle,
   deleteVehicle,
   getVehicleById,
-  getVehicleServices
+  getVehicleServices,
+  getMyVehicles 
 } from "../controllers/vehicleController.js";
 
 const router = express.Router();
@@ -14,6 +15,7 @@ const router = express.Router();
 // CRUD
 router.get("/", authenticateUser, getVehicles);
 router.post("/", authenticateUser, addVehicle);
+router.get("/my", authenticateUser, getMyVehicles);
 router.get("/:id", authenticateUser, getVehicleById);
 router.put("/:id", authenticateUser, updateVehicle);
 router.delete("/:id", authenticateUser, deleteVehicle);

@@ -69,7 +69,7 @@ const Login = () => {
     setTimeout(() => {
       if (selectedRole === "customer") navigate("/dashboard");
       else if (selectedRole === "mechanic") navigate("/mechanic/dashboard");
-      else if (selectedRole === "service_center_manager") navigate("/manager/dashboard");
+      else if (selectedRole === "manager") navigate("/manager/dashboard");
       else if (selectedRole === "admin") navigate("/admin/dashboard");
     }, 500);
 

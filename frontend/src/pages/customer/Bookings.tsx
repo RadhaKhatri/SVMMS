@@ -11,10 +11,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, Calendar, Car, CheckCircle, Clock, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "@/components/ui/use-toast";
+import { useLocation } from "react-router-dom";
+
 
 const Bookings = () => {
   
-  const [bookings, setBookings] = useState([]);
+    /* ================= STATES ================= */
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [selectedServices, setSelectedServices] = useState<number[]>([]);
+  const [centers, setCenters] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState("all");
+const [selectedBooking, setSelectedBooking] = useState<any>(null);
+const [detailsOpen, setDetailsOpen] = useState(false);
+const location = useLocation();
+const [open, setOpen] = useState(false);
+
+
+const token = localStorage.getItem("token");
 
 const fetchBookings = async () => {
   const res = await axios.get("http://localhost:5000/api/bookings", {
@@ -23,19 +39,71 @@ const fetchBookings = async () => {
   setBookings(res.data);
 };
 
-useEffect(() => {
+const fetchVehicles = async () => {
+  try {
+    const res = await axios.get(
+      "http://localhost:5000/api/vehicles/my",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setVehicles(res.data);
+  } catch (err) {
+    console.error("Vehicle fetch error:", err);
+  }
+};
+
+const fetchServices = async () => {
+  try {
+    const res = await axios.get(
+      "http://localhost:5000/api/services",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setServices(res.data);
+  } catch (err) {
+    console.error("Service fetch error:", err);
+  }
+};
+
+
+   const fetchCenters = async () => {
+    const res = await axios.get("http://localhost:5000/api/service-centers");
+    setCenters(res.data);
+  };
+
+  useEffect(() => {
+  if (!token) return;
   fetchBookings();
-}, []);
+  fetchVehicles();
+  fetchServices();
+  fetchCenters();
+}, [token]);
 
-const token = localStorage.getItem("token");
+useEffect(() => {
+  if (location.state?.vehicleId) {
+    setOpen(true);
+    setForm((prev) => ({
+      ...prev,
+      vehicle_id: String(location.state.vehicleId)
+    }));
+  }
+}, [location.state]);
 
-const [form, setForm] = useState({
+
+const initialFormState = {
   vehicle_id: "",
-  service_type: "",
+  service_center_id: "",
   preferred_date: "",
   preferred_time: "",
   remarks: ""
-});
+};
+
+
+const [form, setForm] = useState(initialFormState);
+
+const filteredBookings =
+  activeTab === "all"
+    ? bookings
+    : bookings.filter((b) => b.status === activeTab);
+
 
 const handleBookingSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -44,56 +112,134 @@ const handleBookingSubmit = async (e: React.FormEvent) => {
     await axios.post(
       "http://localhost:5000/api/bookings",
       {
-        vehicle_id: form.vehicle_id,
-        service_center_id: 1, // default
-        service_type: form.service_type,
-        preferred_date: form.preferred_date,
-        preferred_time: form.preferred_time,
-        remarks: form.remarks
+            vehicle_id: Number(form.vehicle_id),
+    service_center_id: Number(form.service_center_id),
+    preferred_date: form.preferred_date,
+    preferred_time: form.preferred_time,
+    remarks: form.remarks,
+    services: selectedServices.map(Number)
       },
       {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       }
     );
+    toast({
+      title: "Booking Successful 🎉",
+      description: "Your service booking has been submitted successfully.",
+    });
+    // 🔥 RESET FORM + SERVICES
+      setForm(initialFormState);
+      setSelectedServices([]);
 
     fetchBookings();
   } catch (error) {
     console.error("Booking failed:", error);
+     toast({
+      title: "Booking Failed ❌",
+      description:
+        error.response?.data?.message ||
+        "Something went wrong. Please try again.",
+      variant: "destructive",
+    });
+  }
+};
+
+const handleViewDetails = async (id: number) => {
+  try {
+    const res = await axios.get(
+      `http://localhost:5000/api/bookings/${id}`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    setSelectedBooking(res.data);
+    setDetailsOpen(true);
+  } catch (err) {
+    toast({
+      title: "Failed to load booking",
+      variant: "destructive",
+    });
+  }
+};
+const handleCancelBooking = async (id: number) => {
+  try {
+    await axios.patch(
+      `http://localhost:5000/api/bookings/${id}/cancel`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    toast({ title: "Booking cancelled" });
+    fetchBookings();
+  } catch (err) {
+    toast({
+      title: "Cancel failed",
+      variant: "destructive",
+    });
   }
 };
 
 
+   /* ================= STATUS UI ================= */
+
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case "pending": return { 
-        icon: Clock, 
-        className: "bg-warning/20 text-warning border-warning/30",
-        label: "PENDING"
-      };
-      case "approved": return { 
-        icon: CheckCircle, 
-        className: "bg-primary/20 text-primary border-primary/30",
-        label: "APPROVED"
-      };
-      case "completed": return { 
-        icon: CheckCircle, 
-        className: "bg-success/20 text-success border-success/30",
-        label: "COMPLETED"
-      };
-      case "cancelled": return { 
-        icon: AlertCircle, 
-        className: "bg-destructive/20 text-destructive border-destructive/30",
-        label: "CANCELLED"
-      };
-      default: return { 
-        icon: Clock, 
-        className: "bg-secondary text-secondary-foreground border-border",
-        label: status.toUpperCase()
-      };
+      case "pending":
+        return {
+          icon: Clock,
+          className: "bg-warning/20 text-warning border-warning/30",
+          label: "PENDING"
+        };
+      case "approved":
+        return {
+          icon: CheckCircle,
+          className: "bg-primary/20 text-primary border-primary/30",
+          label: "APPROVED"
+        };
+      case "completed":
+        return {
+          icon: CheckCircle,
+          className: "bg-success/20 text-success border-success/30",
+          label: "COMPLETED"
+        };
+      case "cancelled":
+        return {
+          icon: AlertCircle,
+          className: "bg-destructive/20 text-destructive border-destructive/30",
+          label: "CANCELLED"
+        };
+      default:
+        return {
+          icon: Clock,
+          className: "bg-secondary text-secondary-foreground border-border",
+          label: status.toUpperCase()
+        };
     }
   };
+
+  const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const formatTime = (timeStr: string) => {
+  if (!timeStr) return "";
+  const [hour, minute] = timeStr.split(":");
+  const date = new Date();
+  date.setHours(Number(hour), Number(minute));
+  return date.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
 
   return (
     <DashboardLayout role="customer">
@@ -104,62 +250,118 @@ const handleBookingSubmit = async (e: React.FormEvent) => {
             <h1 className="text-3xl font-bold text-foreground">Service <span className="text-primary">Bookings</span></h1>
             <p className="text-muted-foreground mt-1">View and manage your service appointments</p>
           </div>
-          <Dialog>
+          <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button className="gradient-primary text-primary-foreground glow-primary">
                 <Plus className="mr-2 h-4 w-4" />
                 New Booking
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl bg-card bg-white/10">
+            
+            <DialogContent className="max-w-2xl h-[90vh] flex flex-col bg-card bg-black/100 border border-white  ">
               <DialogHeader>
                 <DialogTitle className="text-2xl">Book a Service</DialogTitle>
                 <DialogDescription>Fill in the details for your service appointment</DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleBookingSubmit} className="space-y-4 mt-4">
-                <div className="space-y-2">
+              
+              <form onSubmit={handleBookingSubmit} className="flex flex-col flex-1 overflow-hidden mt-4">
+                <div className="flex-1 overflow-y-auto space-y-1 pr-2">
+                <div className="space-y-1">
                   <Label htmlFor="vehicle">Select Vehicle</Label>
                   <Select
                     onValueChange={(value) =>
-                      setForm((prev) => ({ ...prev, vehicle_id: value }))
+                      setForm((p) => ({ ...p, vehicle_id: value }))
                     }
                   >
 
-                    <SelectTrigger className="bg-secondary/50 bg-white/10">
+                    <SelectTrigger className="bg-secondary/50 bg-white/10 focus:ring-0 focus:border-white">
                       <SelectValue placeholder="Choose a vehicle" />
                     </SelectTrigger>
-                    <SelectContent className="bg-card bg-white/10">
-                      <SelectItem value="1">2020 Toyota Camry - ABC1234</SelectItem>
-                      <SelectItem value="2">2019 Honda Civic - XYZ5678</SelectItem>
-                      <SelectItem value="3">2021 Ford F-150 - DEF9012</SelectItem>
+                    <SelectContent className="bg-card bg-black/100" >
+                      {vehicles.map((v) => (
+                        <SelectItem key={v.id} value={String(v.id)}>
+                          {v.year} {v.make} {v.model} - {v.vin}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* SERVICE CENTER */}
                 <div className="space-y-2">
-                  <Label htmlFor="service">Service Type</Label>
+                  <Label>Select Service Center</Label>
                   <Select
                     onValueChange={(value) =>
-                      setForm((prev) => ({ ...prev, service_type: value }))
+                      setForm((p) => ({ ...p, service_center_id: value }))
                     }
                   >
-
-                    <SelectTrigger className="bg-secondary/50 bg-white/10">
-                      <SelectValue placeholder="Select service" />
+                    <SelectTrigger className="bg-white/10 focus:ring-0 focus:border-white">
+                      <SelectValue placeholder="Choose service center" />
                     </SelectTrigger>
-                    <SelectContent className="bg-card bg-white/10">
-                      <SelectItem value="oil">Oil Change</SelectItem>
-                      <SelectItem value="brake">Brake Service</SelectItem>
-                      <SelectItem value="tire">Tire Rotation</SelectItem>
-                      <SelectItem value="inspection">General Inspection</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                    <SelectContent className="bg-black/100">
+                      {centers.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.name} ({c.city})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+                 {/* SERVICES */}
+                <div className="space-y-2 ">
+                  <Label>Select Services</Label>
+                  {services.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2  ">
+                      <input
+                          type="checkbox"
+                          value={s.id}
+                          checked={selectedServices.includes(s.id)}
+                          onChange={(e) => {
+                            const id = Number(e.target.value);
+                            setSelectedServices((prev) =>
+                              prev.includes(id)
+                                ? prev.filter((x) => x !== id)
+                                : [...prev, id]
+                            );
+                          }}
+                        />
+
+                      <span>{s.name}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {/* ADD NEW SERVICE */}
+                <Input
+                  placeholder="Add new service & press Enter"
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const name = e.currentTarget.value;
+
+                      const res = await axios.post(
+                        "http://localhost:5000/api/services",
+                        { name },
+                        {
+                          headers: {
+                            Authorization: `Bearer ${token}`
+                          }
+                        }
+                      );
+
+                      setServices((prev) => [...prev, res.data]);
+                      e.currentTarget.value = "";
+                    }
+                  }}
+                />
+          
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="date">Preferred Date</Label>
                     <Input
                       type="date"
+                      className="bg-white text-black dark:bg-white/10 dark:text-white"
                       value={form.preferred_date}
                       onChange={(e) =>
                         setForm((prev) => ({ ...prev, preferred_date: e.target.value }))
@@ -169,15 +371,16 @@ const handleBookingSubmit = async (e: React.FormEvent) => {
                   <div className="space-y-2">
                     <Label htmlFor="time">Preferred Time</Label>
                     <Input
-                      type="time"
-                      value={form.preferred_time}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, preferred_time: e.target.value }))
-                      }
-                    />
+                        type="time"
+                        className="bg-white text-black dark:bg-white/10 dark:text-white"
+                        value={form.preferred_time}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, preferred_time: e.target.value }))
+                        }
+                      />
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 ">
                   <Label htmlFor="notes">Additional Notes</Label>
                   <Textarea
                     value={form.remarks}
@@ -185,16 +388,18 @@ const handleBookingSubmit = async (e: React.FormEvent) => {
                       setForm((prev) => ({ ...prev, remarks: e.target.value }))
                     }
                   />
-
+                  </div>
                 </div>
+                <div className="pt-4 border-t bg-background">
                 <Button type="submit" className="w-full gradient-primary text-primary-foreground">Submit Booking Request</Button>
+              </div>
               </form>
             </DialogContent>
           </Dialog>
         </div>
 
         {/* Bookings Tabs */}
-        <Tabs defaultValue="all">
+        <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="all">
           <TabsList className="bg-secondary/50 p-1">
             <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">All Bookings</TabsTrigger>
             <TabsTrigger value="pending" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Pending</TabsTrigger>
@@ -202,91 +407,85 @@ const handleBookingSubmit = async (e: React.FormEvent) => {
             <TabsTrigger value="completed" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Completed</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all" className="space-y-4 mt-6">
-            {bookings.map((booking) => {
-              const statusConfig = getStatusConfig(booking.status);
-              const StatusIcon = statusConfig.icon;
-              return (
-                <Card key={booking.id} className="bg-card/50 bg-white/10 hover:border-primary/30 transition-all duration-300 overflow-hidden">
-                  <div className="h-1 gradient-primary" />
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="p-3 bg-primary/10 rounded-xl">
-                              <Car className="h-6 w-6 text-primary" />
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-bold text-foreground">{booking.service_type}</h3>
-                              <p className="text-sm text-muted-foreground">{booking.preferred_date} at {booking.preferred_time}
+          <TabsContent value={activeTab} className="space-y-4 mt-6">
+  {filteredBookings.length === 0 ? (
+    <Card className="bg-card/50 bg-white/10">
+      <CardContent className="pt-6 text-center text-muted-foreground py-12">
+        <Clock className="h-12 w-12 mx-auto mb-4 text-primary/50" />
+        <p>No bookings found</p>
+      </CardContent>
+    </Card>
+  ) : (
+    filteredBookings.map((booking) => {
+      const statusConfig = getStatusConfig(booking.status);
+      const StatusIcon = statusConfig.icon;
 
-</p>
-                            </div>
-                          </div>
-                          <Badge className={statusConfig.className}>
-                            <StatusIcon className="h-3 w-3 mr-1" />
-                            {statusConfig.label}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-6 text-sm pl-16">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Calendar className="h-4 w-4 text-primary" />
-                            <span>{booking.preferred_date} at {booking.preferred_time}</span>
-                          </div>
-                          {booking.mechanic && (
-                            <div className="text-muted-foreground">
-                              <span>Mechanic: </span>
-                              <span className="font-medium text-foreground">{booking.mechanic}</span>
-                            </div>
-                          )}
-                          {booking.amount && (
-                            <div className="font-bold text-primary text-lg">{booking.amount}</div>
-                          )}
-                        </div>
-                        {booking.notes && (
-                          <p className="text-sm text-muted-foreground pl-16 italic">{booking.remarks}</p>
-                        )}
-                      </div>
-                      <div className="ml-4 flex gap-2">
-                        <Button variant="outline" size="sm" className="bg-white/10 hover:bg-secondary">View Details</Button>
-                        {booking.status === "completed" && (
-                          <Button size="sm" className="gradient-primary text-primary-foreground">View Invoice</Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </TabsContent>
+      return (
+        <Card
+          key={booking.id}
+          className="bg-card/50 bg-black/10 hover:border-primary/30 transition-all"
+        >
+          <CardContent className="pt-6">
+            <div className="flex justify-between">
+              <div className="space-y-2">
+                <h3 className="font-bold">
+                  {booking.make} {booking.model} ({booking.year})
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {formatDate(booking.preferred_date)} at {formatTime(booking.preferred_time)}
+                </p>
 
-          <TabsContent value="pending" className="mt-6">
-            <Card className="bg-card/50 bg-white/10">
-              <CardContent className="pt-6 text-center text-muted-foreground py-12">
-                <Clock className="h-12 w-12 mx-auto mb-4 text-primary/50" />
-                <p>Filter showing pending bookings only</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <Badge className={statusConfig.className}>
+                  <StatusIcon className="h-3 w-3 mr-1" />
+                  {statusConfig.label}
+                </Badge>
+              </div>
 
-          <TabsContent value="approved" className="mt-6">
-            <Card className="bg-card/50 bg-white/10">
-              <CardContent className="pt-6 text-center text-muted-foreground py-12">
-                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-primary/50" />
-                <p>Filter showing approved bookings only</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              <div className="flex flex-col gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleViewDetails(booking.id)}
+                >
+                  View Details
+                </Button>
 
-          <TabsContent value="completed" className="mt-6">
-            <Card className="bg-card/50 bg-white/10">
-              <CardContent className="pt-6 text-center text-muted-foreground py-12">
-                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-success/50" />
-                <p>Filter showing completed bookings only</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                {booking.status === "pending" && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleCancelBooking(booking.id)}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    })
+  )}
+</TabsContent>
+
+<Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Booking Details</DialogTitle>
+    </DialogHeader>
+
+    {selectedBooking && (
+      <div className="space-y-2 text-sm">
+        <p><b>Vehicle:</b> {selectedBooking.make} {selectedBooking.model}</p>
+        <p><b>Service Center:</b> {selectedBooking.service_center}</p>
+        <p><b>Status:</b> {selectedBooking.status}</p>
+        <p><b>Services:</b> {selectedBooking.services.join(", ")}</p>
+        <p><b>Remarks:</b> {selectedBooking.remarks || "-"}</p>
+      </div>
+    )}
+  </DialogContent>
+</Dialog>
+
         </Tabs>
       </div>
     </DashboardLayout>
