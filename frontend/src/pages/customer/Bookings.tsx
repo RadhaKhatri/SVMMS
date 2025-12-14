@@ -9,38 +9,61 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, Calendar, Car, CheckCircle, Clock, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 const Bookings = () => {
-  const bookings = [
-    {
-      id: 1,
-      vehicle: "2020 Toyota Camry - ABC1234",
-      service: "Oil Change & Filter Replacement",
-      date: "2024-02-15",
-      time: "10:00 AM",
-      status: "pending",
-      notes: "Requested by customer for regular maintenance",
-    },
-    {
-      id: 2,
-      vehicle: "2019 Honda Civic - XYZ5678",
-      service: "Brake Inspection & Repair",
-      date: "2024-02-10",
-      time: "2:00 PM",
-      status: "approved",
-      mechanic: "Mike Johnson",
-    },
-    {
-      id: 3,
-      vehicle: "2021 Ford F-150 - DEF9012",
-      service: "Annual Inspection",
-      date: "2024-01-25",
-      time: "9:00 AM",
-      status: "completed",
-      mechanic: "Sarah Williams",
-      amount: "$249.99",
-    },
-  ];
+  
+  const [bookings, setBookings] = useState([]);
+
+const fetchBookings = async () => {
+  const res = await axios.get("http://localhost:5000/api/bookings", {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+  });
+  setBookings(res.data);
+};
+
+useEffect(() => {
+  fetchBookings();
+}, []);
+
+const token = localStorage.getItem("token");
+
+const [form, setForm] = useState({
+  vehicle_id: "",
+  service_type: "",
+  preferred_date: "",
+  preferred_time: "",
+  remarks: ""
+});
+
+const handleBookingSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    await axios.post(
+      "http://localhost:5000/api/bookings",
+      {
+        vehicle_id: form.vehicle_id,
+        service_center_id: 1, // default
+        service_type: form.service_type,
+        preferred_date: form.preferred_date,
+        preferred_time: form.preferred_time,
+        remarks: form.remarks
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    fetchBookings();
+  } catch (error) {
+    console.error("Booking failed:", error);
+  }
+};
+
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -93,10 +116,15 @@ const Bookings = () => {
                 <DialogTitle className="text-2xl">Book a Service</DialogTitle>
                 <DialogDescription>Fill in the details for your service appointment</DialogDescription>
               </DialogHeader>
-              <form className="space-y-4 mt-4">
+              <form onSubmit={handleBookingSubmit} className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="vehicle">Select Vehicle</Label>
-                  <Select>
+                  <Select
+                    onValueChange={(value) =>
+                      setForm((prev) => ({ ...prev, vehicle_id: value }))
+                    }
+                  >
+
                     <SelectTrigger className="bg-secondary/50 bg-white/10">
                       <SelectValue placeholder="Choose a vehicle" />
                     </SelectTrigger>
@@ -109,7 +137,12 @@ const Bookings = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="service">Service Type</Label>
-                  <Select>
+                  <Select
+                    onValueChange={(value) =>
+                      setForm((prev) => ({ ...prev, service_type: value }))
+                    }
+                  >
+
                     <SelectTrigger className="bg-secondary/50 bg-white/10">
                       <SelectValue placeholder="Select service" />
                     </SelectTrigger>
@@ -125,16 +158,34 @@ const Bookings = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="date">Preferred Date</Label>
-                    <Input id="date" type="date" className="bg-secondary/50 bg-white/10" />
+                    <Input
+                      type="date"
+                      value={form.preferred_date}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, preferred_date: e.target.value }))
+                      }
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="time">Preferred Time</Label>
-                    <Input id="time" type="time" className="bg-secondary/50 bg-white/10" />
+                    <Input
+                      type="time"
+                      value={form.preferred_time}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, preferred_time: e.target.value }))
+                      }
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="notes">Additional Notes</Label>
-                  <Textarea id="notes" placeholder="Any specific concerns or requests..." rows={3} className="bg-secondary/50 bg-white/10" />
+                  <Textarea
+                    value={form.remarks}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, remarks: e.target.value }))
+                    }
+                  />
+
                 </div>
                 <Button type="submit" className="w-full gradient-primary text-primary-foreground">Submit Booking Request</Button>
               </form>
@@ -167,8 +218,10 @@ const Bookings = () => {
                               <Car className="h-6 w-6 text-primary" />
                             </div>
                             <div>
-                              <h3 className="text-lg font-bold text-foreground">{booking.service}</h3>
-                              <p className="text-sm text-muted-foreground">{booking.vehicle}</p>
+                              <h3 className="text-lg font-bold text-foreground">{booking.service_type}</h3>
+                              <p className="text-sm text-muted-foreground">{booking.preferred_date} at {booking.preferred_time}
+
+</p>
                             </div>
                           </div>
                           <Badge className={statusConfig.className}>
@@ -179,7 +232,7 @@ const Bookings = () => {
                         <div className="flex items-center gap-6 text-sm pl-16">
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4 text-primary" />
-                            <span>{booking.date} at {booking.time}</span>
+                            <span>{booking.preferred_date} at {booking.preferred_time}</span>
                           </div>
                           {booking.mechanic && (
                             <div className="text-muted-foreground">
@@ -192,7 +245,7 @@ const Bookings = () => {
                           )}
                         </div>
                         {booking.notes && (
-                          <p className="text-sm text-muted-foreground pl-16 italic">{booking.notes}</p>
+                          <p className="text-sm text-muted-foreground pl-16 italic">{booking.remarks}</p>
                         )}
                       </div>
                       <div className="ml-4 flex gap-2">

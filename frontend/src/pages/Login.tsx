@@ -101,7 +101,7 @@ const Login = () => {
       <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
 
-      <Card className="w-full max-w-md bg-card/80 backdrop-blur-md border-border/50 shadow-2xl relative z-10">
+      <Card className="w-full max-w-md bg-card/80 backdrop-blur-md border-border/100 shadow-2xl relative z-10">
         <CardHeader className="text-center pb-2">
           <Link to="/" className="flex justify-center mb-6">
             <div className="p-4 bg-primary/10 rounded-2xl glow-primary">
