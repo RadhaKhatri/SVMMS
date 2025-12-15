@@ -7,7 +7,7 @@ import vehicleRoutes from "./routes/vehicleRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import serviceCenterRoutes from "./routes/serviceCenterRoutes.js";
-
+import invoiceRoutes from "./routes/invoiceRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -27,6 +27,7 @@ app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/service-centers", serviceCenterRoutes);
+app.use("/api/invoices", invoiceRoutes);
 
 app.get("/", (req, res) => res.send("Server running!"));
 

@@ -4,61 +4,200 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Download, FileText } from "lucide-react";
+import { useEffect, useState } from "react";
+import axios from "axios";
+
 
 const Invoices = () => {
-  const invoices = [
-    { id: "INV-001", date: "2024-01-15", vehicle: "2020 Toyota Camry - ABC1234", service: "Brake Repair", labor: 120.0, parts: 102.98, tax: 22.30, total: 245.28, status: "paid" },
-    { id: "INV-002", date: "2024-01-10", vehicle: "2019 Honda Civic - XYZ5678", service: "Oil Change", labor: 45.0, parts: 32.99, tax: 7.80, total: 85.79, status: "paid" },
-  ];
+  
+  const [invoices, setInvoices] = useState([]);
+const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+const token = localStorage.getItem("token");
 
-  const InvoiceDetail = ({ invoice }: { invoice: typeof invoices[0] }) => (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between pb-4 border-b bg-white/10">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">SVMMS <span className="text-primary">Pro</span></h2>
-          <p className="text-sm text-muted-foreground">123 Service Street</p>
-          <p className="text-sm text-muted-foreground">Automotive City, AC 12345</p>
-        </div>
-        <div className="text-right">
-          <div className="text-3xl font-bold text-primary">{invoice.id}</div>
-          <p className="text-sm text-muted-foreground">Date: {invoice.date}</p>
-          <Badge className="mt-2 bg-success/20 text-success border-success/30">{invoice.status.toUpperCase()}</Badge>
-        </div>
+useEffect(() => {
+  if (token) fetchInvoices();
+}, [token]);
+
+
+const fetchInvoices = async () => {
+  try {
+    const res = await axios.get("http://localhost:5000/api/invoices", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    setInvoices(res.data);
+  } catch (err) {
+    console.error("Invoice fetch failed", err);
+  }
+};
+
+const formatDate = (date: string) =>
+  new Date(date).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR"
+  }).format(amount);
+
+  const openInvoice = async (id: number) => {
+  try {
+    const res = await axios.get(
+      `http://localhost:5000/api/invoices/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    setSelectedInvoice(res.data);
+  } catch (err) {
+    console.error("Invoice detail error", err);
+  }
+};
+
+  const InvoiceDetail = ({ invoice }: { invoice: any }) => (
+  <div className="space-y-6">
+
+    {/* HEADER */}
+    <div className="flex items-start justify-between pb-4 border-b bg-white/10">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">
+          SVMMS <span className="text-primary">Pro</span>
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {invoice.service_center_name}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {invoice.service_center_address}, {invoice.city}
+        </p>
       </div>
-      <div className="grid grid-cols-2 gap-6">
-        <div>
-          <h3 className="font-semibold mb-2 text-foreground">Bill To:</h3>
-          <p className="text-sm text-foreground">John Doe</p>
-          <p className="text-sm text-muted-foreground">john.doe@example.com</p>
+
+      <div className="text-right">
+        {/* ✅ INVOICE NUMBER */}
+        <div className="text-3xl font-bold text-primary">
+          {invoice.invoice_number}
         </div>
-        <div>
-          <h3 className="font-semibold mb-2 text-foreground">Vehicle:</h3>
-          <p className="text-sm text-foreground">{invoice.vehicle}</p>
-          <p className="text-sm text-muted-foreground">Service: {invoice.service}</p>
-        </div>
-      </div>
-      <div className="border bg-white/10 rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-secondary/50">
-            <tr>
-              <th className="text-left p-4 text-sm font-semibold text-foreground">Description</th>
-              <th className="text-right p-4 text-sm font-semibold text-foreground">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-t bg-white/10"><td className="p-4 text-sm text-foreground">Labor Charges</td><td className="p-4 text-sm text-right text-foreground">${invoice.labor.toFixed(2)}</td></tr>
-            <tr className="border-t bg-white/10"><td className="p-4 text-sm text-foreground">Parts & Materials</td><td className="p-4 text-sm text-right text-foreground">${invoice.parts.toFixed(2)}</td></tr>
-            <tr className="border-t bg-white/10 bg-secondary/30"><td className="p-4 text-sm font-semibold text-foreground">Subtotal</td><td className="p-4 text-sm text-right font-semibold text-foreground">${(invoice.labor + invoice.parts).toFixed(2)}</td></tr>
-            <tr className="border-t bg-white/10"><td className="p-4 text-sm text-foreground">Tax (10%)</td><td className="p-4 text-sm text-right text-foreground">${invoice.tax.toFixed(2)}</td></tr>
-            <tr className="border-t bg-white/10 bg-primary/10"><td className="p-4 font-bold text-foreground">TOTAL</td><td className="p-4 text-right font-bold text-2xl text-primary">${invoice.total.toFixed(2)}</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div className="pt-4 border-t bg-white/10 text-center text-sm text-muted-foreground">
-        <p>Thank you for choosing SVMMS!</p>
+
+        {/* ✅ ISSUE DATE */}
+        <p className="text-sm text-muted-foreground">
+          Date: {formatDate(invoice.issued_at)}
+        </p>
+
+        {/* ✅ STATUS */}
+        <Badge
+          className={
+            invoice.status === "paid"
+              ? "mt-2 bg-success/20 text-success border-success/30"
+              : "mt-2 bg-warning/20 text-warning border-warning/30"
+          }
+        >
+          {invoice.status.toUpperCase()}
+        </Badge>
       </div>
     </div>
-  );
+
+    {/* CUSTOMER + VEHICLE */}
+    <div className="grid grid-cols-2 gap-6">
+      <div>
+        <h3 className="font-semibold mb-2 text-foreground">Bill To:</h3>
+        <p className="text-sm text-foreground">
+          {invoice.first_name} {invoice.last_name}
+        </p>
+        <p className="text-sm text-muted-foreground">{invoice.email}</p>
+        <p className="text-sm text-muted-foreground">{invoice.phone}</p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold mb-2 text-foreground">Vehicle:</h3>
+        <p className="text-sm text-foreground">
+          {invoice.make} {invoice.model} ({invoice.year})
+        </p>
+        <p className="text-sm text-muted-foreground">
+          VIN: {invoice.vin}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Service Type: {invoice.service_type}
+        </p>
+      </div>
+    </div>
+
+    {/* AMOUNT TABLE */}
+    <div className="border bg-white/10 rounded-xl overflow-hidden">
+      <table className="w-full">
+        <thead className="bg-secondary/50">
+          <tr>
+            <th className="text-left p-4 text-sm font-semibold text-foreground">
+              Description
+            </th>
+            <th className="text-right p-4 text-sm font-semibold text-foreground">
+              Amount
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr className="border-t bg-white/10">
+            <td className="p-4 text-sm text-foreground">Labor Charges</td>
+            <td className="p-4 text-sm text-right text-foreground">
+              {formatCurrency(invoice.labor_total)}
+            </td>
+          </tr>
+
+          <tr className="border-t bg-white/10">
+            <td className="p-4 text-sm text-foreground">Parts & Materials</td>
+            <td className="p-4 text-sm text-right text-foreground">
+              {formatCurrency(invoice.parts_total)}
+            </td>
+          </tr>
+
+          <tr className="border-t bg-white/10 bg-secondary/30">
+            <td className="p-4 text-sm font-semibold text-foreground">
+              Subtotal
+            </td>
+            <td className="p-4 text-sm text-right font-semibold text-foreground">
+              {formatCurrency(
+                Number(invoice.parts_total) + Number(invoice.labor_total)
+              )}
+            </td>
+          </tr>
+
+          <tr className="border-t bg-white/10">
+            <td className="p-4 text-sm text-foreground">Tax</td>
+            <td className="p-4 text-sm text-right text-foreground">
+              {formatCurrency(invoice.tax)}
+            </td>
+          </tr>
+
+          <tr className="border-t bg-white/10">
+            <td className="p-4 text-sm text-foreground">Discount</td>
+            <td className="p-4 text-sm text-right text-foreground">
+              {formatCurrency(invoice.discount)}
+            </td>
+          </tr>
+
+          <tr className="border-t bg-primary/10">
+            <td className="p-4 font-bold text-foreground">TOTAL</td>
+            <td className="p-4 text-right font-bold text-2xl text-primary">
+              {formatCurrency(invoice.total_amount)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    {/* FOOTER */}
+    <div className="pt-4 border-t bg-white/10 text-center text-sm text-muted-foreground">
+      <p>Thank you for choosing SVMMS!</p>
+    </div>
+  </div>
+);
+
 
   return (
     <DashboardLayout role="customer">
@@ -77,28 +216,65 @@ const Invoices = () => {
                     <div className="p-3 bg-primary/10 rounded-xl"><FileText className="h-6 w-6 text-primary" /></div>
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <span className="font-bold text-lg text-primary">{invoice.id}</span>
-                        <Badge className="bg-success/20 text-success border-success/30">{invoice.status}</Badge>
+                        <span className="font-bold text-lg text-primary">
+                          {invoice.invoice_number}
+                        </span>
+
+                        <Badge
+                            className={
+                              invoice.status === "paid"
+                                ? "bg-success/20 text-success border-success/30"
+                                : "bg-warning/20 text-warning border-warning/30"
+                            }
+                          >
+                            {invoice.status.toUpperCase()}
+                          </Badge>
+
                       </div>
-                      <div className="text-sm text-muted-foreground">{invoice.vehicle}</div>
-                      <div className="text-sm text-muted-foreground">{invoice.service} • {invoice.date}</div>
+                      <div className="text-sm text-muted-foreground">
+                          {invoice.make} {invoice.model} ({invoice.year})
+                        </div>
+
+                        <div className="text-sm text-muted-foreground">
+                          {invoice.service_type} • {formatDate(invoice.issued_at)}
+                        </div>
+
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="text-sm text-muted-foreground">Total Amount</div>
-                      <div className="text-2xl font-bold text-primary">${invoice.total.toFixed(2)}</div>
+                      <div className="text-2xl font-bold text-primary">
+                          {formatCurrency(invoice.total_amount)}
+                        </div>
+
                     </div>
                     <div className="flex gap-2">
                       <Dialog>
-                        <DialogTrigger asChild><Button variant="outline" className="bg-white/10">View</Button></DialogTrigger>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="bg-white/10"
+                            onClick={() => openInvoice(invoice.id)}
+                          >
+                            View
+                          </Button>
+                        </DialogTrigger>
+
                         <DialogContent className="max-w-3xl bg-card bg-white/10 max-h-[80vh] overflow-y-auto">
-                          <DialogHeader><DialogTitle className="text-xl">Invoice Details</DialogTitle></DialogHeader>
-                          <InvoiceDetail invoice={invoice} />
-                          <Button className="w-full gradient-primary text-primary-foreground mt-4"><Download className="mr-2 h-4 w-4" />Download PDF</Button>
+                          <DialogHeader>
+                            <DialogTitle className="text-xl">Invoice Details</DialogTitle>
+                          </DialogHeader>
+
+                          {selectedInvoice && (
+                            <InvoiceDetail invoice={selectedInvoice.invoice} />
+                          )}
+
+                          <Button className="w-full gradient-primary text-primary-foreground mt-4">
+                            <Download className="mr-2 h-4 w-4" /> Download PDF
+                          </Button>
                         </DialogContent>
                       </Dialog>
-                      <Button className="gradient-primary text-primary-foreground"><Download className="mr-2 h-4 w-4" />PDF</Button>
                     </div>
                   </div>
                 </div>

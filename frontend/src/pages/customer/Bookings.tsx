@@ -435,6 +435,21 @@ const formatTime = (timeStr: string) => {
                   {formatDate(booking.preferred_date)} at {formatTime(booking.preferred_time)}
                 </p>
 
+                                {/* SERVICES */}
+                {booking.services?.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {booking.services.map((service: string, idx: number) => (
+                      <Badge
+                        key={idx}
+                        variant="outline"
+                        className="bg-white/10 text-foreground border-primary/30"
+                      >
+                        {service}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
                 <Badge className={statusConfig.className}>
                   <StatusIcon className="h-3 w-3 mr-1" />
                   {statusConfig.label}

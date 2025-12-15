@@ -11,3 +11,4 @@ router.get("/stats", authenticateUser, getCustomerDashboardStats);
 router.get("/recent-services", authenticateUser, getRecentServices);
 
 export default router;
+
