@@ -83,7 +83,6 @@ const Login = () => {
   }
 };
 
-
   const roleIcons = {
     customer: User,
     mechanic: Wrench,

@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import pool from "../db.js";
 import jwt from 'jsonwebtoken';
+import { sendResetEmail } from "../utils/mailer.js";
 
 export const registerUser = async (req, res) => {
   try {
@@ -122,3 +123,74 @@ export const loginUser = async (req, res) => {
   }
 };
   
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const userRes = await pool.query(
+      "SELECT id FROM users WHERE email = $1",
+      [email]
+    );
+
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const userId = userRes.rows[0].id;
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await pool.query(
+      `INSERT INTO password_resets (user_id, token, expires_at)
+       VALUES ($1, $2, $3)`,
+      [userId, token, expiresAt]
+    );
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+
+    console.log("📧 Sending reset email...");
+await sendResetEmail(email, resetLink);
+console.log("📧 Email sent successfully");
+
+    res.json({ message: "Reset link sent to your email" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Email sending failed" });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    const result = await pool.query(
+      `SELECT user_id FROM password_resets
+       WHERE token = $1 AND expires_at > NOW()`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      `UPDATE users SET password_hash = $1 WHERE id = $2`,
+      [hashed, result.rows[0].user_id]
+    );
+
+    await pool.query(
+      `DELETE FROM password_resets WHERE token = $1`,
+      [token]
+    );
+
+    res.json({ message: "Password reset successful" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Reset failed" });
+  }
+};

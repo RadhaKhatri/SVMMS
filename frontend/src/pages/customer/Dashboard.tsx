@@ -9,17 +9,10 @@ import { Link } from "react-router-dom";
 
 const Dashboard = () => {
 
+  const [user, setUser] = useState<any>(null);
 const [stats, setStats] = useState<any[]>([]);
 const [recentServices, setRecentServices] = useState<any[]>([]);
 const token = localStorage.getItem("token");
-
-
-  useEffect(() => {
-  if (token) {
-    fetchStats();
-    fetchRecentServices();
-  }
-}, [token]);
 
 const fetchStats = async () => {
   try {
@@ -60,8 +53,6 @@ const fetchRecentServices = async () => {
       setStats(res.data.stats);
       setRecentServices(res.data.recentServices);
     };
-
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
     
    const statsConfig = {
   vehicles: Car,
@@ -69,6 +60,33 @@ const fetchRecentServices = async () => {
   completed: FileText,
   pending: Clock
 };
+
+console.log("TOKEN:", token);
+
+const fetchUser = async () => {
+  try {
+    const res = await axios.get(
+      "http://localhost:5000/api/auth/me",
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    console.log("👤 User fetched:", res.data); // DEBUG
+    setUser(res.data);
+  } catch (err) {
+    console.error("User fetch failed", err);
+  }
+};
+
+
+
+useEffect(() => {
+  if (!token) return;
+
+  fetchUser();
+  fetchStats();
+  fetchRecentServices();
+}, [token]);
 
 
   return (
@@ -78,8 +96,11 @@ const fetchRecentServices = async () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">
-              Welcome back, <span className="text-primary">{user.name}</span>
-            </h1>
+  Welcome back,{" "}
+  <span className="text-primary">
+    {user?.name}
+  </span>
+</h1>
             <p className="text-muted-foreground mt-1">Here's what's happening with your vehicles</p>
           </div>
           <Link to="/bookings">

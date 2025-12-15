@@ -14,7 +14,7 @@ export const authenticateUser = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const userResult = await pool.query(
-      "SELECT id, email, role FROM users WHERE id = $1",
+      "SELECT id, name, email, role FROM users WHERE id = $1",
       [decoded.id]
     );
 
@@ -29,3 +29,4 @@ export const authenticateUser = async (req, res, next) => {
     return res.status(401).json({ message: "Invalid token" });
   }
 };
+
