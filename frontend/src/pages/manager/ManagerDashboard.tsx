@@ -3,69 +3,240 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileText, Users, Clock, CheckCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useToast } from "@/hooks/use-toast";
+
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ServiceCenterModal from "@/components/manager/ServiceCenterModal";
+import { useNavigate } from "react-router-dom";
+
 
 const ManagerDashboard = () => {
-  const stats = [
-    { title: "Pending Approvals", value: "8", icon: FileText, color: "text-warning" },
-    { title: "Active Mechanics", value: "12", icon: Users, color: "text-primary" },
-    { title: "In Progress", value: "15", icon: Clock, color: "text-accent" },
-    { title: "Completed Today", value: "23", icon: CheckCircle, color: "text-success" },
-  ];
 
-  const pendingBookings = [
-    {
-      id: 1,
-      customer: "John Doe",
-      vehicle: "2020 Toyota Camry - ABC1234",
-      service: "Brake Repair",
-      date: "2024-02-16",
-      time: "10:00 AM",
-      priority: "high",
-    },
-    {
-      id: 2,
-      customer: "Jane Smith",
-      vehicle: "2019 Honda Civic - XYZ5678",
-      service: "Oil Change",
-      date: "2024-02-16",
-      time: "2:00 PM",
-      priority: "normal",
-    },
-  ];
+  const [pendingBookings, setPendingBookings] = useState<any[]>([]);
+const [mechanics, setMechanics] = useState<any[]>([]);
 
-  const availableMechanics = [
-    { id: 1, name: "Mike Johnson", specialty: "Brake Systems", status: "available", jobs: 2 },
-    { id: 2, name: "Sarah Williams", specialty: "Engine Repair", status: "busy", jobs: 3 },
-    { id: 3, name: "Tom Brown", specialty: "Diagnostics", status: "available", jobs: 1 },
-  ];
+const [selectedBooking, setSelectedBooking] = useState<any>(null);
+const [selectedMechanic, setSelectedMechanic] = useState<number | null>(null);
+const [showServiceCenterModal, setShowServiceCenterModal] = useState(false);
+const navigate = useNavigate();
+const { toast } = useToast();
+
+
+const fetchPendingBookings = async () => {
+  const res = await axios.get(
+    "http://localhost:5000/api/manager/bookings/pending",
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }
+  );
+
+  setPendingBookings(res.data);
+  setStats((prev) => ({
+    ...prev,
+    pending: res.data.length,
+  }));
+};
+
+const fetchMechanics = async () => {
+  const res = await axios.get(
+    "http://localhost:5000/api/manager/mechanics",
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }
+  );
+
+  setMechanics(res.data);
+  setStats((prev) => ({
+    ...prev,
+    activeMechanics: res.data.length,
+  }));
+};
+
+const rejectBooking = async (id: number) => {
+  try {
+    await axios.post(
+      `http://localhost:5000/api/manager/bookings/${id}/reject`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    toast({
+      title: "Booking Rejected",
+      description: "The booking has been rejected successfully.",
+    });
+
+    fetchPendingBookings();
+  } catch (error) {
+    toast({
+      title: "Error",
+      description: "Failed to reject booking",
+      variant: "destructive",
+    });
+  }
+};
+
+
+const approveBooking = async () => {
+  if (!selectedBooking || !selectedMechanic) return;
+
+ await axios.post(
+  `http://localhost:5000/api/manager/bookings/${selectedBooking.id}/approve`,
+  { mechanic_id: selectedMechanic },
+  {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  }
+);
+
+
+  setSelectedBooking(null);
+  setSelectedMechanic(null);
+  fetchPendingBookings();
+};
+const [stats, setStats] = useState({
+  pending: 0,
+  activeMechanics: 0,
+  inProgress: 0,
+  completedToday: 0,
+});
+
+
+const [serviceCenter, setServiceCenter] = useState<any>(null);
+const fetchServiceCenter = async () => {
+  const res = await axios.get(
+    "http://localhost:5000/api/manager/service-center",
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }
+  );
+  setServiceCenter(res.data);
+};
+
+useEffect(() => {
+  fetchPendingBookings();
+  fetchMechanics();
+  fetchServiceCenter(); 
+}, []);
+
 
   return (
+
+ <>
     <DashboardLayout role="manager">
       <div className="p-6 space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Service Manager Dashboard</h1>
-          <p className="text-muted-foreground">Manage bookings, mechanics, and workflow</p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          {/* Title */}
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">
+              Service Manager Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              Manage bookings, mechanics, and workflow
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 ">
+            <Button
+  onClick={() => {
+    if (serviceCenter) {
+      toast({
+        title: "Service Center Already Registered",
+        description:
+          "You already have a service center. Go to Profile to edit details.",
+        variant: "default",
+      });
+    } else {
+      setShowServiceCenterModal(true);
+    }
+  }}
+  className="text-black "
+>
+  {serviceCenter ? "Service Center Registered" : "Register Service Center"}
+</Button>
+
+
+  <Button className="border border-white"
+    variant="outline"
+    onClick={() => navigate("/manager/job-cards")}
+  >
+    Job Cards
+  </Button>
+            <Button className="border border-white"
+              variant="outline"
+              onClick={() => navigate("/manager/profile")}
+            >
+              Profile
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, idx) => (
-            <Card key={idx}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ">
+            <Card className="border border-white/30">
+              <CardHeader className="flex justify-between items-center ">
+                <CardTitle className="text-sm">Pending Approvals</CardTitle>
+                <FileText className="h-5 w-5 text-warning" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{stat.value}</div>
+                <div className="text-3xl font-bold">{stats.pending}</div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+
+            <Card className="border border-white/30">
+              <CardHeader className="flex justify-between items-center">
+                <CardTitle className="text-sm">Active Mechanics</CardTitle>
+                <Users className="h-5 w-5 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{stats.activeMechanics}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-white/30">
+              <CardHeader className="flex justify-between items-center">
+                <CardTitle className="text-sm">In Progress</CardTitle>
+                <Clock className="h-5 w-5 text-accent" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{stats.inProgress}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-white/30">
+              <CardHeader className="flex justify-between items-center">
+                <CardTitle className="text-sm">Completed Today</CardTitle>
+                <CheckCircle className="h-5 w-5 text-success" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{stats.completedToday}</div>
+              </CardContent>
+            </Card>
+          </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Pending Bookings */}
-          <Card>
+          <Card className="border border-white/20">
             <CardHeader>
               <CardTitle>Pending Approvals</CardTitle>
             </CardHeader>
@@ -75,23 +246,35 @@ const ManagerDashboard = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="font-semibold">{booking.customer}</div>
-                      <div className="text-sm text-muted-foreground">{booking.vehicle}</div>
-                      <div className="text-sm font-medium mt-1">{booking.service}</div>
+                        <div className="text-sm text-muted-foreground">{booking.vehicle}</div>
+                        <div className="text-sm font-medium mt-1">{booking.service_type}</div>
+
                     </div>
                     <Badge variant={booking.priority === "high" ? "destructive" : "secondary"}>
                       {booking.priority}
                     </Badge>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {booking.date} at {booking.time}
+                    {booking.preferred_date} at {booking.preferred_time}
                   </div>
                   <div className="flex gap-2 pt-2">
-                    <Button size="sm" className="flex-1">
-                      Approve
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1">
-                      Reject
-                    </Button>
+                    <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setSelectedBooking(booking)}
+                      >
+                        Approve
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => rejectBooking(booking.id)}
+                      >
+                        Reject
+                      </Button>
+
                   </div>
                 </div>
               ))}
@@ -99,12 +282,12 @@ const ManagerDashboard = () => {
           </Card>
 
           {/* Available Mechanics */}
-          <Card>
+          <Card className="border border-white/20">
             <CardHeader>
               <CardTitle>Mechanic Status</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {availableMechanics.map((mechanic) => (
+              {mechanics.map((mechanic) => (
                 <div key={mechanic.id} className="p-4 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <div>
@@ -112,7 +295,7 @@ const ManagerDashboard = () => {
                       <div className="text-sm text-muted-foreground">{mechanic.specialty}</div>
                     </div>
                     <Badge variant={mechanic.status === "available" ? "default" : "secondary"}>
-                      {mechanic.status}
+                      <Badge>{mechanic.availability_status}</Badge>
                     </Badge>
                   </div>
                   <div className="text-sm text-muted-foreground">
@@ -124,7 +307,55 @@ const ManagerDashboard = () => {
           </Card>
         </div>
       </div>
+
+      <Dialog
+          open={!!selectedBooking}
+          onOpenChange={() => setSelectedBooking(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Assign Mechanic</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-3">
+              {mechanics.map((m) => (
+                <div
+                  key={m.id}
+                  onClick={() => setSelectedMechanic(m.id)}
+                  className={`p-3 border rounded cursor-pointer ${
+                    selectedMechanic === m.id ? "border-primary" : ""
+                  }`}
+                >
+                  <div className="font-semibold">{m.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    Status: {m.availability_status}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              className="w-full mt-4"
+              onClick={approveBooking}
+              disabled={!selectedMechanic}
+            >
+              Confirm & Create Job Card
+            </Button>
+          </DialogContent>
+        </Dialog>
+
     </DashboardLayout>
+    {showServiceCenterModal && (
+      <ServiceCenterModal
+        open={showServiceCenterModal}
+        onClose={() => setShowServiceCenterModal(false)}
+        onSuccess={() => {
+          setShowServiceCenterModal(false);
+          fetchServiceCenter();
+        }}
+      />
+    )}
+  </>
   );
 };
 

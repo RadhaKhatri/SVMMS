@@ -7,48 +7,163 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Car, CheckCircle, Clock, Gauge, Mail, Phone, Plus, Save, Trash2, User, Wrench } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
 
 const JobCard = () => {
-  const jobCard = {
-    id: "JC-001",
-    status: "in-service",
-    customer: { name: "John Doe", phone: "+1 (555) 123-4567", email: "john@example.com" },
-    vehicle: {
-      make: "Toyota",
-      model: "Camry",
-      year: 2020,
-      plate: "ABC1234",
-      vin: "1HGBH41JXMN109186",
-      mileage: "45,230 mi",
-    },
-    mechanic: { name: "Mike Johnson", id: "M-001", specialty: "Brake Systems" },
-    service: "Brake Inspection & Repair",
-    startTime: "2024-02-15 09:00 AM",
-    estimatedCompletion: "2024-02-15 02:00 PM",
-  };
 
-  const tasks = [
-    { id: 1, description: "Inspect brake pads", completed: true },
-    { id: 2, description: "Replace front brake pads", completed: true },
-    { id: 3, description: "Check brake fluid level", completed: false },
-    { id: 4, description: "Test brake system", completed: false },
-  ];
+  const { id } = useParams();
+const [jobCard, setJobCard] = useState<any>(null);
+const [tasks, setTasks] = useState<any[]>([]);
+const [parts, setParts] = useState<any[]>([]);
+const [notes, setNotes] = useState("");
+const [availableParts, setAvailableParts] = useState<any[]>([]);
+const [selectedPartId, setSelectedPartId] = useState<number | null>(null);
+const [partQty, setPartQty] = useState(1);
 
-  const parts = [
-    { id: 1, name: "Brake Pad Set (Front)", quantity: 1, cost: 89.99, stock: 15 },
-    { id: 2, name: "Brake Fluid", quantity: 1, cost: 12.99, stock: 8 },
-  ];
+const headers = {
+  Authorization: `Bearer ${localStorage.getItem("token")}`,
+};
 
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case "pending": return { className: "bg-warning/20 text-warning border-warning/30", label: "PENDING" };
-      case "in-service": return { className: "bg-primary/20 text-primary border-primary/30", label: "IN SERVICE" };
-      case "completed": return { className: "bg-success/20 text-success border-success/30", label: "COMPLETED" };
-      default: return { className: "bg-secondary text-secondary-foreground", label: status.toUpperCase() };
+const fetchAvailableParts = async () => {
+  const res = await axios.get(
+    `http://localhost:5000/api/mechanic/job-cards/${id}/available-parts`,
+    { headers }
+  );
+
+  setAvailableParts(res.data);
+};
+
+const updateStatus = async (jobCardId: number, status: string) => {
+  await axios.patch(
+    `http://localhost:5000/api/mechanic/job-cards/${jobCardId}/status`,
+    { status },
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
     }
-  };
+  );
+};
 
-  const statusConfig = getStatusConfig(jobCard.status);
+const addTask = async () => {
+  await axios.post(
+    `http://localhost:5000/api/mechanic/job-cards/${id}/tasks`,
+    {
+      description: "Brake inspection",
+      hours: 2,
+      labor_rate: 500,
+    },
+    { headers }
+  );
+
+  fetchJobCard();
+};
+
+const addPart = async () => {
+  if (!selectedPartId) {
+    alert("Please select a part");
+    return;
+  }
+
+  await axios.post(
+    `http://localhost:5000/api/mechanic/job-cards/${id}/parts`,
+    {
+      part_id: selectedPartId,
+      quantity: partQty,
+    },
+    { headers }
+  );
+
+  setSelectedPartId(null);
+  setPartQty(1);
+
+  fetchJobCard();
+  fetchAvailableParts();
+};
+
+
+const saveNotes = async () => {
+  await axios.patch(
+    `http://localhost:5000/api/mechanic/job-cards/${id}/notes`,
+    { notes },
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }
+  );
+};
+
+const getStatusConfig = (status?: string) => {
+  switch (status) {
+    case "open":
+      return {
+        className: "bg-warning/20 text-warning border-warning/30",
+        label: "OPEN",
+      };
+    case "in_progress":
+      return {
+        className: "bg-primary/20 text-primary border-primary/30",
+        label: "IN PROGRESS",
+      };
+    case "completed":
+      return {
+        className: "bg-success/20 text-success border-success/30",
+        label: "COMPLETED",
+      };
+    default:
+      return {
+        className: "bg-secondary",
+        label: status || "UNKNOWN",
+      };
+  }
+};
+
+const fetchJobCard = async () => {
+  const res = await axios.get(
+    `http://localhost:5000/api/mechanic/job-cards/${id}`,
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }
+  );
+
+  setJobCard(res.data);
+  setTasks(res.data.tasks || []);
+  setParts(res.data.parts || []);
+  setNotes(res.data.notes || "");
+};
+
+useEffect(() => {
+  axios
+    .get(`http://localhost:5000/api/mechanic/job-cards/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+    .then(res => {
+      setJobCard(res.data);
+      setTasks(res.data.tasks || []);
+      setParts(res.data.parts || []);
+      setNotes(res.data.notes || "");
+       fetchJobCard();
+       fetchAvailableParts();
+    });
+}, [id]);
+
+// ⬇️ AFTER useState, useEffect, helper functions
+if (!jobCard) {
+  return (
+    <DashboardLayout role="mechanic">
+      <div className="p-6">Loading job card...</div>
+    </DashboardLayout>
+  );
+}
+
+const statusConfig = getStatusConfig(jobCard?.status);
 
   return (
     <DashboardLayout role="mechanic">
@@ -65,11 +180,11 @@ const JobCard = () => {
             <p className="text-muted-foreground text-lg">{jobCard.service}</p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="bg-white/10 hover:bg-secondary">
+            <Button onClick={() => updateStatus(jobCard.id, "in_progress")} variant="outline" className="bg-white/10 hover:bg-secondary">
               <Save className="mr-2 h-4 w-4" />
               Save Progress
             </Button>
-            <Button className="gradient-primary text-primary-foreground glow-primary">
+            <Button  onClick={() => updateStatus(jobCard.id, "completed")} className="gradient-primary text-primary-foreground glow-primary">
               <CheckCircle className="mr-2 h-4 w-4" />
               Complete Job
             </Button>
@@ -156,7 +271,7 @@ const JobCard = () => {
             <Card className="bg-card/50 bg-white/10">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Task Checklist</CardTitle>
-                <Button size="sm" className="gradient-primary text-primary-foreground">
+                <Button onClick={addTask} size="sm" className="gradient-primary text-primary-foreground">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Task
                 </Button>
@@ -188,12 +303,31 @@ const JobCard = () => {
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="parts" className="space-y-4 mt-6">
             <Card className="bg-card/50 bg-white/10">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Parts & Materials</CardTitle>
-                <Button size="sm" className="gradient-primary text-primary-foreground">
+                <select
+  value={selectedPartId ?? ""}
+  onChange={(e) => setSelectedPartId(Number(e.target.value))}
+  className="w-full p-2 bg-secondary rounded"
+>
+  <option value="">Select Part</option>
+  {availableParts.map((p) => (
+    <option key={p.id} value={p.id}>
+      {p.name} (Stock: {p.quantity})
+    </option>
+  ))}
+</select>
+
+<input
+  type="number"
+  min={1}
+  value={partQty}
+  onChange={(e) => setPartQty(Number(e.target.value))}
+  className="w-full p-2 mt-2 bg-secondary rounded"
+/>
+                <Button onClick={addPart} size="sm" className="gradient-primary text-primary-foreground">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Part
                 </Button>
@@ -248,23 +382,12 @@ const JobCard = () => {
                     placeholder="Document any findings, issues, or additional work needed..."
                     rows={4}
                     className="bg-secondary/50 bg-white/10 focus:border-primary"
+                    value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
                   />
-                  <Button className="gradient-primary text-primary-foreground">Save Note</Button>
+                  <Button onClick={saveNotes} className="gradient-primary text-primary-foreground">Save Note</Button>
                 </div>
-                <div className="pt-4 border-t bg-white/10 space-y-3">
-                  <div className="p-4 bg-secondary/30 border bg-white/10 rounded-xl">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                          <User className="h-4 w-4 text-primary" />
-                        </div>
-                        <span className="font-medium text-foreground">Mike Johnson</span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">2024-02-15 10:30 AM</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Front brake pads were worn down to 2mm. Replaced with new set.</p>
-                  </div>
-                </div>
+              
               </CardContent>
             </Card>
           </TabsContent>
@@ -275,3 +398,4 @@ const JobCard = () => {
 };
 
 export default JobCard;
+

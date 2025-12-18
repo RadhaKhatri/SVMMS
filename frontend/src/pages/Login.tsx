@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Settings, ShieldCheck, User, Wrench } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -100,7 +101,16 @@ const Login = () => {
       <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
 
+      <div className="relative w-full max-w-md">
       <Card className="w-full max-w-md bg-card/80 backdrop-blur-md border-border/100 shadow-2xl relative z-10">
+        {/* ❌ Cross FIXED inside card */}
+                  <button
+                    type="button"
+                    onClick={() => navigate("/")}
+                    className="absolute top-3 right-3 z-10 text-muted-foreground hover:text-foreground transition"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
         <CardHeader className="text-center pb-2">
           <Link to="/" className="flex justify-center mb-6">
             <div className="p-4 bg-primary/10 rounded-2xl glow-primary">
@@ -174,6 +184,7 @@ const Login = () => {
           </div>
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 };

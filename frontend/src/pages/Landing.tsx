@@ -17,11 +17,12 @@ const Landing = () => {
               SVMMS
             </span>
           </div>
+        {/* 
           <nav className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-muted-foreground hover:text-primary transition-colors">Features</a>
             <a href="#services" className="text-muted-foreground hover:text-primary transition-colors">Services</a>
             <a href="#about" className="text-muted-foreground hover:text-primary transition-colors">About</a>
-          </nav>
+          </nav> */}
           <div className="flex gap-3">
             <Link to="/login">
               <Button variant="outline" className="border-primary/50 text-primary hover:bg-primary/10">

@@ -12,13 +12,19 @@ import Bookings from "./pages/customer/Bookings";
 import Invoices from "./pages/Invoices";
 import MechanicDashboard from "./pages/mechanic/MechanicDashboard";
 import JobCard from "./pages/mechanic/JobCard";
+import MechanicJobCards from "./pages/mechanic/MechanicJobCards";
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
 import Inventory from "./pages/manager/Inventory";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-
+import ManagerProfile from "@/pages/manager/Profile";
+import JobCards  from "@/pages/manager/JobCards";
+import JobCardDetail from "@/pages/manager/JobCardDetail";
+import MechanicProfile from "@/pages/mechanic/MechanicProfile";
+import ServiceCenterRequests from "@/pages/mechanic/ServiceCenterRequests";
+import MechanicsRequest from "@/pages/manager/MechanicRequests";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +49,7 @@ const App = () => (
           
           {/* Mechanic Routes */}
           <Route path="/mechanic/dashboard" element={<MechanicDashboard />} />
-          <Route path="/mechanic/jobcard/:id" element={<JobCard />} />
+          <Route path="/mechanic/job-cards/:id" element={<JobCard />} />
           
           {/* Manager Routes */}
           <Route path="/manager/dashboard" element={<ManagerDashboard />} />
@@ -51,6 +57,16 @@ const App = () => (
           
           {/* Admin Routes */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+          <Route path="/manager/profile" element={<ManagerProfile />} />
+          <Route path="/manager/job-cards" element={<JobCards />} />
+          <Route path="/manager/job-cards/:id" element={<JobCardDetail />} />
+          <Route path="/mechanic/profile" element={<MechanicProfile />} />
+          <Route path="/mechanic/service-center-requests" element={<ServiceCenterRequests />} />
+          <Route path="/manager/mechanics" element={<MechanicsRequest />} />
+          <Route path="/mechanic/job-cards" element={<MechanicJobCards />} />
+
+
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

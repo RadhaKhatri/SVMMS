@@ -258,14 +258,14 @@ const formatTime = (timeStr: string) => {
               </Button>
             </DialogTrigger>
             
-            <DialogContent className="max-w-2xl h-[90vh] flex flex-col bg-card bg-black/100 border border-white  ">
+            <DialogContent className="max-w-2xl h-[90vh] flex flex-col bg-card bg-black/100 border border-white overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl">Book a Service</DialogTitle>
                 <DialogDescription>Fill in the details for your service appointment</DialogDescription>
               </DialogHeader>
               
-              <form onSubmit={handleBookingSubmit} className="flex flex-col flex-1 overflow-hidden mt-4">
-                <div className="flex-1 overflow-y-auto space-y-1 pr-2">
+              <form onSubmit={handleBookingSubmit} className="">
+                <div>
                 <div className="space-y-1">
                   <Label htmlFor="vehicle">Select Vehicle</Label>
                   <Select

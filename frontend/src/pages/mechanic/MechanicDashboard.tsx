@@ -4,6 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileText, Clock, CheckCircle, Wrench } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
+import axios from "axios";
+
+interface ServiceCenter {
+  id: number;
+  name: string;
+  city: string;
+  status?: "pending" | "approved" | "rejected";
+}
 
 const MechanicDashboard = () => {
   const stats = [
@@ -34,13 +44,67 @@ const MechanicDashboard = () => {
     },
   ];
 
+
+  const { toast } = useToast();
+  const token = localStorage.getItem("token");
+
+  // Fetch service centers + request status
+  const fetchServiceCenters = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/mechanic/request-center", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to load service centers",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchServiceCenters();
+  }, []);
+
+  // Send request to join service center
+  const handleRequest = async (id: number) => {
+    try {
+      await axios.post(
+        `http://localhost:5000/api/mechanic/request-center/${id}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast({ title: "Request Sent", description: "Your request is now pending approval." });
+      fetchServiceCenters(); // refresh status
+    } catch (err) {
+      toast({
+        title: "Request Failed",
+        description: "Could not send request",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <DashboardLayout role="mechanic">
       <div className="p-6 space-y-6">
         {/* Header */}
+        <div className="flex items-center justify-between ">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Mechanic Dashboard</h1>
           <p className="text-muted-foreground">Manage your assigned job cards</p>
+        </div>
+
+           <Link to="/mechanic/service-center-requests">
+          <Button variant="secondary" className="border border-white">
+            Request Service Center
+          </Button>
+        </Link>
+
+         <Link to="/mechanic/profile">
+          <Button variant="outline" className="border border-white">My Profile</Button>
+        </Link>
         </div>
 
         {/* Stats */}

@@ -8,6 +8,8 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import serviceCenterRoutes from "./routes/serviceCenterRoutes.js";
 import invoiceRoutes from "./routes/invoiceRoutes.js";
+import managerRoutes from "./routes/managerRoutes.js";
+import mechanicRoutes from "./routes/mechanicsRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -28,6 +30,10 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/service-centers", serviceCenterRoutes);
 app.use("/api/invoices", invoiceRoutes);
+app.use("/api/mechanic", mechanicRoutes);
+app.use("/api/manager", managerRoutes);
+
+
 
 app.get("/", (req, res) => res.send("Server running!"));
 
