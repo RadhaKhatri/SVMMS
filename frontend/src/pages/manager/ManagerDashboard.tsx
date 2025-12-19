@@ -47,6 +47,7 @@ const fetchPendingBookings = async () => {
   }));
 };
 
+
 const fetchMechanics = async () => {
   const res = await axios.get(
     "http://localhost:5000/api/manager/mechanics",
@@ -63,6 +64,7 @@ const fetchMechanics = async () => {
     activeMechanics: res.data.length,
   }));
 };
+
 
 const rejectBooking = async (id: number) => {
   try {
@@ -131,10 +133,29 @@ const fetchServiceCenter = async () => {
   setServiceCenter(res.data);
 };
 
+const fetchDashboardStats = async () => {
+  const res = await axios.get(
+    "http://localhost:5000/api/manager/dashboard-stats",
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }
+  );
+
+  setStats((prev) => ({
+    ...prev,
+    inProgress: res.data.inProgress,
+    completedToday: res.data.completedToday,
+  }));
+};
+
+
 useEffect(() => {
   fetchPendingBookings();
   fetchMechanics();
   fetchServiceCenter(); 
+  fetchDashboardStats();
 }, []);
 
 
@@ -245,13 +266,13 @@ useEffect(() => {
                 <div key={booking.id} className="p-4 border rounded-lg space-y-2">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="font-semibold">{booking.customer}</div>
-                        <div className="text-sm text-muted-foreground">{booking.vehicle}</div>
-                        <div className="text-sm font-medium mt-1">{booking.service_type}</div>
+                      <div className="font-semibold">{booking.customer_name}</div>
+                        <div className="text-sm text-muted-foreground">{booking.make} {booking.model} ({booking.year})</div>
+                        <div className="text-sm font-medium mt-1">Services: {booking.services?.join(", ")}</div>
 
                     </div>
                     <Badge variant={booking.priority === "high" ? "destructive" : "secondary"}>
-                      {booking.priority}
+                      {booking.status}
                     </Badge>
                   </div>
                   <div className="text-sm text-muted-foreground">
@@ -292,9 +313,13 @@ useEffect(() => {
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <div className="font-semibold">{mechanic.name}</div>
-                      <div className="text-sm text-muted-foreground">{mechanic.specialty}</div>
+                      <div className="text-sm text-muted-foreground">Hourly Rate: ₹{mechanic.hourly_rate || "N/A"}</div>
                     </div>
-                    <Badge variant={mechanic.status === "available" ? "default" : "secondary"}>
+                    <Badge variant={
+    mechanic.availability_status === "available"
+      ? "default"
+      : "secondary"
+  }>
                       <Badge>{mechanic.availability_status}</Badge>
                     </Badge>
                   </div>

@@ -15,13 +15,55 @@ interface ServiceCenter {
   status?: "pending" | "approved" | "rejected";
 }
 
+interface JobCard {
+  job_card_id: number;
+  status: "pending" | "in_progress" | "completed";
+  created_at: string;
+  service_type: string;
+  vehicle: string;
+  customer_name: string;
+}
+
 const MechanicDashboard = () => {
-  const stats = [
-    { title: "Assigned Jobs", value: "5", icon: FileText, color: "text-primary" },
-    { title: "In Progress", value: "2", icon: Clock, color: "text-warning" },
-    { title: "Completed Today", value: "3", icon: CheckCircle, color: "text-success" },
-    { title: "Avg. Completion", value: "2.5h", icon: Wrench, color: "text-accent" },
-  ];
+
+  const [jobCards, setJobCards] = useState<JobCard[]>([]);
+const [loading, setLoading] = useState(true);
+
+const fetchJobCards = async () => {
+  try {
+    const res = await axios.get(
+      "http://localhost:5000/api/mechanic/job-cards",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setJobCards(res.data);
+  } catch (err) {
+    toast({
+      title: "Error",
+      description: "Failed to load job cards",
+      variant: "destructive",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchJobCards();
+}, []);
+
+const assignedJobs = jobCards.length;
+const inProgress = jobCards.filter(j => j.status === "in_progress").length;
+const completedToday = jobCards.filter(
+  j =>
+    j.status === "completed" &&
+    new Date(j.created_at).toDateString() === new Date().toDateString()
+).length;
+
+const stats = [
+  { title: "Assigned Jobs", value: assignedJobs, icon: FileText },
+  { title: "In Progress", value: inProgress, icon: Clock },
+  { title: "Completed Today", value: completedToday, icon: CheckCircle },
+];
 
   const activeJobs = [
     {
@@ -128,42 +170,52 @@ const MechanicDashboard = () => {
             <CardTitle>Active Job Cards</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {activeJobs.map((job) => (
-              <div
-                key={job.id}
-                className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-primary">{job.id}</span>
-                      <Badge variant={job.priority === "high" ? "destructive" : "secondary"}>
-                        {job.priority}
-                      </Badge>
-                    </div>
-                    <h3 className="font-semibold mt-1">
-                      {job.vehicle} - {job.plate}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{job.service}</p>
-                  </div>
-                  <Link to={`/mechanic/jobcard/${job.id}`}>
-                    <Button>View Details</Button>
-                  </Link>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Started at {job.startTime}</span>
-                    <span className="font-medium">{job.progress}% Complete</span>
-                  </div>
-                  <div className="w-full bg-secondary rounded-full h-2">
-                    <div
-                      className="bg-accent h-2 rounded-full transition-all"
-                      style={{ width: `${job.progress}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+            {loading ? (
+  <p className="text-muted-foreground">Loading jobs...</p>
+) : jobCards.length === 0 ? (
+  <p className="text-muted-foreground">No assigned job cards</p>
+) : (
+  jobCards.map((job) => (
+    <div
+      key={job.job_card_id}
+      className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-primary">
+              JC-{job.job_card_id}
+            </span>
+            <Badge
+              variant={
+                job.status === "completed"
+                  ? "success"
+                  : job.status === "in_progress"
+                  ? "secondary"
+                  : "outline"
+              }
+            >
+              {job.status}
+            </Badge>
+          </div>
+
+          <h3 className="font-semibold mt-1">
+            {job.vehicle}
+          </h3>
+
+          <p className="text-sm text-muted-foreground">
+            {job.service_type} • {job.customer_name}
+          </p>
+        </div>
+
+        <Link to={`/mechanic/jobcard/${job.job_card_id}`}>
+          <Button>View Details</Button>
+        </Link>
+      </div>
+    </div>
+  ))
+)}
+
           </CardContent>
         </Card>
       </div>

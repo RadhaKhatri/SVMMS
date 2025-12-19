@@ -11,8 +11,15 @@ import {
   getJobCardDetail,
   getJobCardsList,
   rejectMechanic,
-  approveMechanic ,
-  getPendingMechanicRequests 
+  approveMechanic ,  
+  getPendingMechanicRequests ,
+  getDashboardStats ,
+  getInventory,
+  upsertInventory,
+  getLowStockInventory,
+  addOrUpdatePart,
+  getInventoryLogs,
+  getAllParts 
 } from "../controllers/managerController.js";
 
 import { authenticateUser } from "../middleware/authMiddleware.js";
@@ -116,6 +123,26 @@ router.post(
   managerOnly,
   rejectMechanic
 );
+
+router.get(
+  "/dashboard-stats",
+  authenticateUser,
+  managerOnly,
+  getDashboardStats
+);
+router.get("/inventory/logs", authenticateUser, managerOnly, getInventoryLogs);
+router.get("/inventory/low-stock", authenticateUser, managerOnly, getLowStockInventory);
+router.get("/inventory", authenticateUser, managerOnly, getInventory);
+router.post("/inventory", authenticateUser, managerOnly, upsertInventory);
+router.get(
+  "/parts",
+  authenticateUser,
+  managerOnly,
+  getAllParts
+);
+
+
+
 
 
 export default router;

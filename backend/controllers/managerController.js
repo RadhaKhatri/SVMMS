@@ -327,7 +327,7 @@ export const updateManagerProfile = async (req, res) => {
     console.error("Update profile error:", error);
     res.status(500).json({ message: "Failed to update profile" });
   }
-};
+};  
 
 export const getJobCardsList = async (req, res) => {
   try {
@@ -511,4 +511,268 @@ export const rejectMechanic = async (req, res) => {
   );
 
   res.json({ message: "Mechanic rejected" });
+};
+
+/* ================================
+   7️⃣ DASHBOARD STATS
+================================ */
+export const getDashboardStats = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        COUNT(*) FILTER (WHERE jc.status = 'open') AS in_progress,
+        COUNT(*) FILTER (
+          WHERE jc.status = 'completed'
+          AND DATE(jc.end_time) = CURRENT_DATE
+        ) AS completed_today
+      FROM job_cards jc
+      WHERE jc.service_center_id = (
+        SELECT id FROM service_centers WHERE manager_id = $1
+      )
+      `,
+      [req.user.id]
+    );
+
+    res.json({
+      inProgress: Number(result.rows[0].in_progress),
+      completedToday: Number(result.rows[0].completed_today),
+    });
+  } catch (err) {
+    console.error("Dashboard stats error:", err);
+    res.status(500).json({ message: "Failed to fetch dashboard stats" });
+  }
+};
+
+export const getInventory = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        i.id,
+         i.part_id,
+        p.name,
+        p.part_code,
+        p.category,
+        p.unit_price,
+        i.quantity,
+        i.reorder_level,
+        i.location
+      FROM inventory i
+      JOIN parts p ON p.id = i.part_id
+      WHERE i.service_center_id = (
+        SELECT id FROM service_centers WHERE manager_id = $1
+      )
+      ORDER BY p.name
+      `,
+      [req.user.id]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Inventory fetch error:", err);
+    res.status(500).json({ message: "Failed to fetch inventory" });
+  }
+};
+
+export const upsertInventory = async (req, res) => {
+  const { part_id, quantity, reorder_level, location } = req.body;
+
+  try {
+    if (!part_id || quantity == null) {
+      return res.status(400).json({ message: "part_id and quantity required" });
+    }
+
+    // 🔍 Ensure part exists
+    const partCheck = await pool.query(
+      `SELECT id FROM parts WHERE id = $1`,
+      [part_id]
+    );
+
+    if (partCheck.rows.length === 0) {
+      return res.status(400).json({
+        message: "Invalid part selected",
+      });
+    }
+
+    const sc = await pool.query(
+      `SELECT id FROM service_centers WHERE manager_id = $1`,
+      [req.user.id]
+    );
+
+    if (sc.rows.length === 0) {
+      return res.status(400).json({ message: "Service center not found" });
+    }
+
+    await pool.query(
+      `
+      INSERT INTO inventory
+        (service_center_id, part_id, quantity, reorder_level, location)
+      VALUES ($1,$2,$3,$4,$5)
+      ON CONFLICT (service_center_id, part_id)
+      DO UPDATE SET
+        quantity = EXCLUDED.quantity,
+        reorder_level = EXCLUDED.reorder_level,
+        location = EXCLUDED.location,
+        updated_at = NOW()
+      `,
+      [
+        sc.rows[0].id,
+        part_id,
+        quantity,
+        reorder_level || 0,
+        location || null,
+      ]
+    );
+
+    res.json({ message: "Inventory saved successfully" });
+  } catch (err) {
+
+    // 1️⃣ Missing fields
+if (!part_id || quantity == null) {
+  return res.status(400).json({ message: "part_id and quantity required" });
+}
+
+// 2️⃣ Invalid part
+if (partCheck.rows.length === 0) {
+  return res.status(400).json({ message: "Invalid part selected" });
+}
+
+// 3️⃣ No service center
+if (sc.rows.length === 0) {
+  return res.status(400).json({ message: "Service center not found" });
+}
+console.error("Save failed:", err.response?.data);
+  alert(err.response?.data?.message || "Failed to save inventory");
+    console.error("Inventory save error:", err);
+    res.status(500).json({ message: "Failed to save inventory" });
+  }
+};
+
+
+export const getLowStockInventory = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        p.name,
+        i.quantity,
+        i.reorder_level
+      FROM inventory i
+      JOIN parts p ON p.id = i.part_id
+      WHERE i.quantity <= i.reorder_level
+      AND i.service_center_id = (
+        SELECT id FROM service_centers WHERE manager_id = $1
+      )
+      `,
+      [req.user.id]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch low stock" });
+  }
+};
+
+export const addOrUpdatePart = async (req, res) => {
+  const {
+    part_id,
+    part_code,
+    name,
+    category,
+    unit_price,
+    quantity,
+    reorder_level,
+    location
+  } = req.body;
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    let finalPartId = part_id;
+
+    // 1️⃣ Insert or update PART
+    if (!part_id) {
+      const partRes = await client.query(
+        `
+        INSERT INTO parts (part_code, name, category, unit_price)
+        VALUES ($1,$2,$3,$4)
+        RETURNING id
+        `,
+        [part_code, name, category, unit_price]
+      );
+      finalPartId = partRes.rows[0].id;
+    } else {
+      await client.query(
+        `
+        UPDATE parts
+        SET name=$1, category=$2, unit_price=$3
+        WHERE id=$4
+        `,
+        [name, category, unit_price, part_id]
+      );
+    }
+
+    // 2️⃣ Upsert INVENTORY
+    await client.query(
+      `
+      INSERT INTO inventory
+      (service_center_id, part_id, quantity, reorder_level, location)
+      VALUES (
+        (SELECT id FROM service_centers WHERE manager_id=$1),
+        $2,$3,$4,$5
+      )
+      ON CONFLICT (service_center_id, part_id)
+      DO UPDATE SET
+        quantity = EXCLUDED.quantity,
+        reorder_level = EXCLUDED.reorder_level,
+        location = EXCLUDED.location,
+        updated_at = NOW()
+      `,
+      [req.user.id, finalPartId, quantity, reorder_level, location]
+    );
+
+    await client.query("COMMIT");
+    res.json({ message: "Part saved successfully" });
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error(err);
+    res.status(500).json({ message: "Failed to save part" });
+  } finally {
+    client.release();
+  }
+};
+
+export const getInventoryLogs = async (req, res) => {
+  const result = await pool.query(
+    `
+    SELECT
+      p.name,
+      jp.quantity_used,
+      jp.unit_price,
+      jp.total_price,
+      jc.id AS job_card_id,
+      jp.created_at
+    FROM job_parts jp
+    JOIN parts p ON p.id = jp.part_id
+    JOIN job_cards jc ON jc.id = jp.job_card_id
+    WHERE jc.service_center_id = (
+      SELECT id FROM service_centers WHERE manager_id=$1
+    )
+    ORDER BY jp.created_at DESC
+    `,
+    [req.user.id]
+  );
+
+  res.json(result.rows);
+};
+
+export const getAllParts = async (req, res) => {
+  const result = await pool.query(
+    `SELECT id, name, part_code FROM parts ORDER BY name`
+  );
+  res.json(result.rows);
 };
