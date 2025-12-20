@@ -69,7 +69,7 @@ const JobCards = () => {
                 <CardTitle>{jc.service_type}</CardTitle>
                 {getStatusBadge(jc.status)}
               </div>
-            </CardHeader>
+            </CardHeader> 
 
             <CardContent className="flex justify-between items-center">
               <div className="text-sm space-y-1">

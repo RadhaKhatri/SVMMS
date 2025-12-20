@@ -19,7 +19,11 @@ import {
   getLowStockInventory,
   addOrUpdatePart,
   getInventoryLogs,
-  getAllParts 
+  getAllParts ,
+  addJobTask,
+  addJobPart,
+  updateJobCardStatus,
+  generateInvoice,
 } from "../controllers/managerController.js";
 
 import { authenticateUser } from "../middleware/authMiddleware.js";
@@ -139,6 +143,46 @@ router.get(
   authenticateUser,
   managerOnly,
   getAllParts
+);
+
+router.post(
+  "/job-cards/:id/tasks",
+  authenticateUser,
+  managerOnly,
+  addJobTask
+);
+
+/**
+ * 2️⃣ Add Spare Part Usage to Job Card
+ * POST /api/manager/job-cards/:job_card_id/parts
+ */
+router.post(
+  "/job-cards/:id/parts",
+  authenticateUser,
+  managerOnly,
+  addJobPart
+);
+
+/**
+ * 3️⃣ Update Job Card Status (open → in_progress → completed)
+ * PATCH /api/manager/job-cards/:id/status
+ */
+router.patch(
+  "/job-cards/:id/status",
+  authenticateUser,
+  managerOnly,
+  updateJobCardStatus
+);
+
+/**
+ * 4️⃣ Generate Invoice (after completion)
+ * POST /api/manager/job-cards/:job_card_id/invoice
+ */
+router.post(
+  "/job-cards/:id/invoice",
+  authenticateUser,
+  managerOnly,
+  generateInvoice
 );
 
 

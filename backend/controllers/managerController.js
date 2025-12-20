@@ -776,3 +776,242 @@ export const getAllParts = async (req, res) => {
   );
   res.json(result.rows);
 };
+
+// Add labor task to a job card
+export const addJobTask = async (req, res) => {
+  const jobCardId = req.params.id; // ✅ FIXED
+  const { description, hours, labor_rate } = req.body;
+
+  if (!description || !hours || !labor_rate) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    const total_cost = Number(hours) * Number(labor_rate);
+
+    await pool.query(
+      `
+      INSERT INTO job_tasks
+      (job_card_id, description, hours, labor_rate, total_cost)
+      VALUES ($1, $2, $3, $4, $5)
+      `,
+      [jobCardId, description, hours, labor_rate, total_cost]
+    );
+
+    await pool.query(
+      `
+      UPDATE job_cards
+      SET total_labor_cost = COALESCE(total_labor_cost, 0) + $1,
+          updated_at = NOW()
+      WHERE id = $2
+      `,
+      [total_cost, jobCardId]
+    );
+
+    res.json({ message: "Task added successfully", total_cost });
+  } catch (err) {
+    console.error("Add job task error:", err);
+    res.status(500).json({ message: "Failed to add task" });
+  }
+};
+
+// Add part usage for a job card
+export const addJobPart = async (req, res) => {
+  const jobCardId = req.params.id;
+  const { part_id, quantity } = req.body;
+
+  if (!part_id || !quantity || quantity <= 0) {
+    return res.status(400).json({
+      message: "Part ID and valid quantity are required",
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    /* 1️⃣ Get job card + service center */
+    const jobRes = await client.query(
+      `SELECT service_center_id
+       FROM job_cards
+       WHERE id = $1`,
+      [jobCardId]
+    );
+
+    if (jobRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Job card not found" });
+    }
+
+    const serviceCenterId = jobRes.rows[0].service_center_id;
+
+    /* 2️⃣ Check inventory */
+    const invRes = await client.query(
+      `
+      SELECT i.quantity AS available_qty,
+             p.unit_price
+      FROM inventory i
+      JOIN parts p ON p.id = i.part_id
+      WHERE i.service_center_id = $1
+        AND i.part_id = $2
+      `,
+      [serviceCenterId, part_id]
+    );
+
+    if (invRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Part not available in inventory" });
+    }
+
+    const { available_qty, unit_price } = invRes.rows[0];
+
+    if (quantity > available_qty) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Insufficient stock" });
+    }
+
+    const totalPrice = Number(unit_price) * Number(quantity);
+
+    /* 3️⃣ Insert into job_parts (✅ CORRECT COLUMN NAMES) */
+    await client.query(
+      `
+      INSERT INTO job_parts
+        (job_card_id, part_id, quantity_used, unit_price, total_price)
+      VALUES ($1, $2, $3, $4, $5)
+      `,
+      [jobCardId, part_id, quantity, unit_price, totalPrice]
+    );
+
+    /* 4️⃣ Deduct inventory */
+    await client.query(
+      `
+      UPDATE inventory
+      SET quantity = quantity - $1,
+          updated_at = NOW()
+      WHERE service_center_id = $2
+        AND part_id = $3
+      `,
+      [quantity, serviceCenterId, part_id]
+    );
+
+    /* 5️⃣ Update job card parts total */
+    await client.query(
+      `
+      UPDATE job_cards
+      SET total_parts_cost = total_parts_cost + $1,
+          updated_at = NOW()
+      WHERE id = $2
+      `,
+      [totalPrice, jobCardId]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(201).json({
+      message: "Part added successfully",
+      total_price: totalPrice,
+    });
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Add job part error:", err);
+    res.status(500).json({ message: "Failed to add job part" });
+  } finally {
+    client.release();
+  }
+};
+
+
+export const updateJobCardStatus = async (req, res) => {
+  try {
+    const jobCardId = req.params.id;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
+    await pool.query(
+      `
+      UPDATE job_cards
+      SET status = $1,
+          updated_at = NOW()
+      WHERE id = $2
+      `,
+      [status, jobCardId]
+    );
+
+    res.json({ message: "Job status updated" });
+  } catch (err) {
+    console.error("Update job status error:", err);
+    res.status(500).json({ message: "Failed to update job status" });
+  }
+};
+
+
+export const generateInvoice = async (req, res) => {
+  try {
+    const jobCardId = req.params.id;
+    const { tax = 0, discount = 0 } = req.body;
+
+    const jobRes = await pool.query(
+      `
+      SELECT total_parts_cost, total_labor_cost
+      FROM job_cards
+      WHERE id = $1
+      `,
+      [jobCardId]
+    );
+
+    if (jobRes.rows.length === 0) {
+      return res.status(404).json({ message: "Job card not found" });
+    }
+
+    const { total_parts_cost, total_labor_cost } = jobRes.rows[0];
+
+    const subtotal =
+      Number(total_parts_cost || 0) + Number(total_labor_cost || 0);
+
+    const total_amount =
+      subtotal + Number(tax || 0) - Number(discount || 0);
+
+    const invoice_number = `INV-${Date.now()}`;
+
+    await pool.query(
+      `
+      INSERT INTO invoices
+      (job_card_id, invoice_number, parts_total, labor_total, tax, discount, total_amount, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,'unpaid')
+      `,
+      [
+        jobCardId,
+        invoice_number,
+        total_parts_cost,
+        total_labor_cost,
+        tax,
+        discount,
+        total_amount,
+      ]
+    );
+
+    // Mark job as completed
+    await pool.query(
+      `
+      UPDATE job_cards
+      SET status = 'completed',
+          updated_at = NOW()
+      WHERE id = $1
+      `,
+      [jobCardId]
+    );
+
+    res.json({
+      invoice_number,
+      total_amount,
+    });
+  } catch (err) {
+    console.error("Generate invoice error:", err);
+    res.status(500).json({ message: "Failed to generate invoice" });
+  }
+};
