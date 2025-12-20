@@ -34,7 +34,6 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
     mechanic: [
       { to: "/mechanic/dashboard", icon: LayoutDashboard, label: "Dashboard" },
       { to: "/mechanic/job-cards", icon: FileText, label: "Job Cards" },
-      { to: "/mechanic/schedule", icon: Calendar, label: "Schedule" },
     ],
     manager: [
       { to: "/manager/dashboard", icon: LayoutDashboard, label: "Dashboard" },

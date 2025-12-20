@@ -185,8 +185,4 @@ router.post(
   generateInvoice
 );
 
-
-
-
-
 export default router;

@@ -12,7 +12,9 @@ import {
   addJobPart,
   saveJobNotes,
   generateInvoice,
-  getAvailableParts
+  getAvailableParts,
+  completeJobTask,
+  getMechanicSchedule 
 } from "../controllers/mechanicsController.js";
 
 import { authenticateUser } from "../middleware/authMiddleware.js";
@@ -131,5 +133,18 @@ router.get(
   getAvailableParts
 );
 
+router.patch(
+  "/job-cards/:jobCardId/tasks/:taskId/complete",
+  authenticateUser,
+  mechanicOnly,
+  completeJobTask
+);
+
+router.get(
+  "/schedule",
+  authenticateUser,
+  mechanicOnly,
+  getMechanicSchedule
+);
 
 export default router; 

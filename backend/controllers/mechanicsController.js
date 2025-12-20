@@ -175,6 +175,7 @@ export const getMyJobCardDetail = async (req, res) => {
     const { id } = req.params;
     const mechanicId = req.user.id;
 
+    // 1️⃣ Job card main info
     const result = await pool.query(
       `SELECT
         jc.id, jc.status, jc.start_time, jc.end_time,
@@ -197,6 +198,29 @@ export const getMyJobCardDetail = async (req, res) => {
 
     const r = result.rows[0];
 
+    // 2️⃣ Tasks
+    const tasks = await pool.query(
+      `SELECT id, description, hours, labor_rate, completed
+       FROM job_tasks
+       WHERE job_card_id = $1
+       ORDER BY id`,
+      [id]
+    );
+
+    // 3️⃣ Parts
+    const parts = await pool.query(
+      `SELECT jp.id,
+              p.name,
+              jp.quantity_used AS quantity,
+              jp.unit_price,
+              jp.total_price
+       FROM job_parts jp
+       JOIN parts p ON p.id = jp.part_id
+       WHERE jp.job_card_id = $1`,
+      [id]
+    );
+
+    // 4️⃣ Final response
     res.json({
       id: r.id,
       status: r.status,
@@ -220,10 +244,8 @@ export const getMyJobCardDetail = async (req, res) => {
         vin: r.vin,
         mileage: r.mileage,
       },
-      costs: {
-        labor: Number(r.total_labor_cost),
-        parts: Number(r.total_parts_cost),
-      },
+      tasks: tasks.rows,   // ✅ FIX
+      parts: parts.rows,   // ✅ FIX
       notes: r.notes,
     });
   } catch (err) {
@@ -237,35 +259,59 @@ export const updateJobStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const result = await pool.query(
+    // ✅ Validate allowed statuses
+    const allowed = ["open", "in_progress", "ready_for_completion", "completed"];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    // ✅ Authorization check
+    const job = await pool.query(
       `SELECT assigned_mechanic FROM job_cards WHERE id = $1`,
       [id]
     );
 
-    if (result.rows.length === 0) {
+    if (!job.rows.length) {
       return res.status(404).json({ message: "Job card not found" });
     }
 
-    if (result.rows[0].assigned_mechanic !== req.user.id) {
-      return res.status(403).json({ message: "Not your assigned job card" });
+    if (job.rows[0].assigned_mechanic !== req.user.id) {
+      return res.status(403).json({ message: "Not your job card" });
     }
 
+    // ✅ SIMPLE update (NO CASE)
     await pool.query(
-      `UPDATE job_cards
-       SET status = $1,
-           start_time = CASE WHEN $1 = 'in_progress' THEN NOW() ELSE start_time END,
-           end_time = CASE WHEN $1 = 'completed' THEN NOW() ELSE end_time END,
-           updated_at = NOW()
-       WHERE id = $2`,
+      `
+      UPDATE job_cards
+      SET status = $1,
+          updated_at = NOW()
+      WHERE id = $2
+      `,
       [status, id]
     );
 
-    res.json({ message: "Job card status updated" });
+    // ✅ Handle timeline separately
+    if (status === "in_progress") {
+      await pool.query(
+        `UPDATE job_cards SET start_time = NOW() WHERE id = $1 AND start_time IS NULL`,
+        [id]
+      );
+    }
+
+    if (status === "completed") {
+      await pool.query(
+        `UPDATE job_cards SET end_time = NOW() WHERE id = $1`,
+        [id]
+      );
+    }
+
+    res.json({ message: "Status updated successfully" });
   } catch (err) {
     console.error("updateJobStatus error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 export const addJobTask = async (req, res) => {
   try {
@@ -300,42 +346,90 @@ export const addJobTask = async (req, res) => {
 };
 
 export const addJobPart = async (req, res) => {
+  const { id } = req.params; // job_card_id
+  const { part_id, quantity } = req.body;
+
   try {
-    const { id } = req.params;
-    const { part_id, quantity } = req.body;
-
-    const partRes = await pool.query(
-      `SELECT unit_price FROM parts WHERE id = $1`,
-      [part_id]
-    );
-
-    const unit_price = partRes.rows[0].unit_price;
-    const total_price = unit_price * quantity;
-
-    await pool.query(
-      `INSERT INTO job_parts
-       (job_card_id, part_id, quantity_used, unit_price, total_price)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [id, part_id, quantity, unit_price, total_price]
-    );
-
-    await pool.query(
-      `UPDATE job_cards
-       SET total_parts_cost = (
-         SELECT COALESCE(SUM(total_price), 0)
-         FROM job_parts
-         WHERE job_card_id = $1
-       )
+    // 1️⃣ Get job card + service center
+    const jobRes = await pool.query(
+      `SELECT service_center_id
+       FROM job_cards
        WHERE id = $1`,
       [id]
     );
 
-    res.json({ message: "Part added" });
+    if (jobRes.rows.length === 0) {
+      return res.status(404).json({ message: "Job card not found" });
+    }
+
+    const serviceCenterId = jobRes.rows[0].service_center_id;
+
+    // 2️⃣ Check inventory
+    const inventoryRes = await pool.query(
+      `
+      SELECT quantity
+      FROM inventory
+      WHERE part_id = $1
+        AND service_center_id = $2
+      `,
+      [part_id, serviceCenterId]
+    );
+
+    if (inventoryRes.rows.length === 0) {
+      return res.status(400).json({ message: "Part not available in inventory" });
+    }
+
+    const availableQty = inventoryRes.rows[0].quantity;
+
+    if (availableQty < quantity) {
+      return res.status(400).json({ message: "Insufficient inventory stock" });
+    }
+
+    // 3️⃣ Insert into job_parts
+    await pool.query(
+      `
+      INSERT INTO job_parts (job_card_id, part_id, quantity_used, unit_price, total_price)
+      SELECT $1, p.id, $2, p.unit_price, p.unit_price * $2
+      FROM parts p
+      WHERE p.id = $3
+      `,
+      [id, quantity, part_id]
+    );
+
+    // 4️⃣ Reduce inventory
+    await pool.query(
+      `
+      UPDATE inventory
+      SET quantity = quantity - $1,
+          updated_at = NOW()
+      WHERE part_id = $2
+        AND service_center_id = $3
+      `,
+      [quantity, part_id, serviceCenterId]
+    );
+
+    // 5️⃣ Update job_cards total_parts_cost
+    await pool.query(
+      `
+      UPDATE job_cards
+      SET total_parts_cost = (
+        SELECT COALESCE(SUM(total_price), 0)
+        FROM job_parts
+        WHERE job_card_id = $1
+      ),
+      updated_at = NOW()
+      WHERE id = $1
+      `,
+      [id]
+    );
+
+    res.json({ message: "Part added successfully" });
   } catch (err) {
     console.error("addJobPart error:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Failed to add part" });
   }
 };
+
 
 export const saveJobNotes = async (req, res) => {
   try {
@@ -403,4 +497,87 @@ export const getAvailableParts = async (req, res) => {
   );
 
   res.json(partsRes.rows);
+};
+
+export const completeJobTask = async (req, res) => {
+  try {
+    const { jobCardId, taskId } = req.params;
+
+    // 1️⃣ Mark task completed
+    await pool.query(
+      `
+      UPDATE job_tasks
+      SET completed = TRUE
+      WHERE id = $1 AND job_card_id = $2
+      `,
+      [taskId, jobCardId]
+    );
+
+    // 2️⃣ Check if ALL tasks are completed
+    const check = await pool.query(
+      `
+      SELECT 
+        COUNT(*) FILTER (WHERE completed = FALSE) AS pending
+      FROM job_tasks
+      WHERE job_card_id = $1
+      `,
+      [jobCardId]
+    );
+
+    const pendingTasks = Number(check.rows[0].pending);
+
+    // 3️⃣ If no pending tasks → mark job ready
+    if (pendingTasks === 0) {
+      await pool.query(
+        `
+        UPDATE job_cards
+        SET status = 'ready_for_completion'
+        WHERE id = $1
+        `,
+        [jobCardId]
+      );
+    }
+
+    res.json({
+      message: "Task completed",
+      allTasksCompleted: pendingTasks === 0,
+    });
+  } catch (err) {
+    console.error("completeJobTask error:", err);
+    res.status(500).json({ message: "Failed to complete task" });
+  }
+};
+
+export const getMechanicSchedule = async (req, res) => {
+  try {
+    const mechanicId = req.user.id;
+
+    const result = await pool.query(
+      `
+      SELECT
+        jc.id AS job_card_id,
+        sb.preferred_date,
+        sb.preferred_time,
+        sb.service_type,
+        jc.status,
+        CONCAT(v.make, ' ', v.model, ' (', v.year, ')') AS vehicle,
+        u.name AS customer_name
+      FROM job_cards jc
+      JOIN service_bookings sb ON sb.id = jc.booking_id
+      JOIN vehicles v ON v.id = jc.vehicle_id
+      JOIN users u ON u.id = jc.customer_id
+      WHERE jc.assigned_mechanic = $1
+        AND jc.status IN ('open', 'in_progress')
+      ORDER BY sb.preferred_date, sb.preferred_time
+      `,
+      [mechanicId]
+    );
+
+    res.json({
+      schedule: result.rows,
+    });
+  } catch (err) {
+    console.error("getMechanicSchedule error:", err);
+    res.status(500).json({ message: "Failed to load schedule" });
+  }
 };

@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 interface ServiceCenter {
   id: number;
@@ -86,7 +87,7 @@ const stats = [
     },
   ];
 
-
+  const navigate = useNavigate();
   const { toast } = useToast();
   const token = localStorage.getItem("token");
 
@@ -150,12 +151,12 @@ const stats = [
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {stats.map((stat, idx) => (
             <Card key={idx}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                <stat.icon className="text-green"  />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{stat.value}</div>
@@ -189,7 +190,7 @@ const stats = [
             <Badge
               variant={
                 job.status === "completed"
-                  ? "success"
+                  ? "secondary"
                   : job.status === "in_progress"
                   ? "secondary"
                   : "outline"
@@ -207,10 +208,9 @@ const stats = [
             {job.service_type} • {job.customer_name}
           </p>
         </div>
-
-        <Link to={`/mechanic/jobcard/${job.job_card_id}`}>
-          <Button>View Details</Button>
-        </Link>
+          <Button  onClick={() =>
+                  navigate(`/mechanic/job-cards/${job.job_card_id}`)
+                }>View Details</Button>
       </div>
     </div>
   ))
