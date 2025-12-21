@@ -25,6 +25,7 @@ import JobCardDetail from "@/pages/manager/JobCardDetail";
 import MechanicProfile from "@/pages/mechanic/MechanicProfile";
 import ServiceCenterRequests from "@/pages/mechanic/ServiceCenterRequests";
 import MechanicsRequest from "@/pages/manager/MechanicRequests";
+import ManagerInvoice from "@/pages/manager/ManagerInvoice";
 
 const queryClient = new QueryClient();
 
@@ -65,7 +66,7 @@ const App = () => (
           <Route path="/mechanic/service-center-requests" element={<ServiceCenterRequests />} />
           <Route path="/manager/mechanics" element={<MechanicsRequest />} />
           <Route path="/mechanic/job-cards" element={<MechanicJobCards />} />
-          <Route path="/manager/invoices" element={<Invoices />} />
+          <Route path="/manager/invoice" element={<ManagerInvoice />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

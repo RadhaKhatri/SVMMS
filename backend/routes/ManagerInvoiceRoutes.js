@@ -1,0 +1,22 @@
+import express from "express";
+import { getMyInvoices, getInvoiceById,downloadInvoicePDF} from "../controllers/ManagerInvoiceController.js";
+import { authenticateUser } from "../middleware/authMiddleware.js";
+
+const router = express.Router();
+
+/**
+ * 🔒 Manager role guard (INLINE)
+ */
+const managerOnly = (req, res, next) => {
+  if (req.user.role !== "service_center_manager") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+  next();
+};
+
+/* CUSTOMER ROUTES */
+router.get("/", authenticateUser, managerOnly, getMyInvoices);
+router.get("/:id", authenticateUser,managerOnly, getInvoiceById);
+router.get("/:id/pdf", authenticateUser,managerOnly, downloadInvoicePDF);
+
+export default router;

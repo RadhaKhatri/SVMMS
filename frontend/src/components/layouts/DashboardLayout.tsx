@@ -40,7 +40,7 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
       { to: "/manager/invoice", icon: FileText, label: "Invoice" },
       { to: "/manager/mechanics", icon: Wrench, label: "Mechanics" },
       { to: "/manager/inventory", icon: Package, label: "Inventory" },
-    ],
+    ],  
     admin: [
       { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
       { to: "/admin/users", icon: Users, label: "Users" },

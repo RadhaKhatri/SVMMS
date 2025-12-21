@@ -99,7 +99,7 @@ const approveBooking = async () => {
 
  await axios.post(
   `http://localhost:5000/api/manager/bookings/${selectedBooking.id}/approve`,
-  { mechanic_id: selectedMechanic },
+  { mechanic_id: selectedMechanic },  
   {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -136,7 +136,7 @@ const fetchServiceCenter = async () => {
 
 const fetchDashboardStats = async () => {
   const res = await axios.get(
-    "http://localhost:5000/api/manager/dashboard-stats",
+    "http://localhost:5000/api/manager/dashboard-stats",  
     {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,

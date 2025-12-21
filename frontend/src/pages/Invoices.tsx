@@ -198,6 +198,26 @@ const formatCurrency = (amount: number) =>
   </div>
 );
 
+const downloadInvoice = async (id: number) => {
+  try {
+    const res = await axios.get(
+      `http://localhost:5000/api/invoices/${id}/pdf`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob"
+      }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `Invoice-${id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+  } catch (err) {
+    console.error("Download failed", err);
+  }
+};
 
   return (
     <DashboardLayout role="customer">
@@ -261,7 +281,7 @@ const formatCurrency = (amount: number) =>
                           </Button>
                         </DialogTrigger>
 
-                        <DialogContent className="max-w-3xl bg-card bg-white/10 max-h-[80vh] overflow-y-auto">
+                        <DialogContent className="max-w-3xl border-white bg-card bg-black max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle className="text-xl">Invoice Details</DialogTitle>
                           </DialogHeader>
@@ -270,9 +290,10 @@ const formatCurrency = (amount: number) =>
                             <InvoiceDetail invoice={selectedInvoice.invoice} />
                           )}
 
-                          <Button className="w-full gradient-primary text-primary-foreground mt-4">
+                          <Button className="w-full gradient-primary text-primary-foreground mt-4" onClick={() => downloadInvoice(selectedInvoice.invoice.id)}>
                             <Download className="mr-2 h-4 w-4" /> Download PDF
                           </Button>
+
                         </DialogContent>
                       </Dialog>
                     </div>

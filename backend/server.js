@@ -10,6 +10,7 @@ import serviceCenterRoutes from "./routes/serviceCenterRoutes.js";
 import invoiceRoutes from "./routes/invoiceRoutes.js";
 import managerRoutes from "./routes/managerRoutes.js";
 import mechanicRoutes from "./routes/mechanicsRoutes.js";
+import managerInvoiceRoutes from "./routes/ManagerInvoiceRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -32,6 +33,7 @@ app.use("/api/service-centers", serviceCenterRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/mechanic", mechanicRoutes);
 app.use("/api/manager", managerRoutes);
+app.use("/api/manager/invoice", managerInvoiceRoutes);
 
 
 
