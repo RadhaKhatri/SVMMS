@@ -111,6 +111,7 @@ const approveBooking = async () => {
   setSelectedBooking(null);
   setSelectedMechanic(null);
   fetchPendingBookings();
+  await fetchMechanics();  
 };
 const [stats, setStats] = useState({
   pending: 0,
@@ -315,13 +316,15 @@ useEffect(() => {
                       <div className="font-semibold">{mechanic.name}</div>
                       <div className="text-sm text-muted-foreground">Hourly Rate: ₹{mechanic.hourly_rate || "N/A"}</div>
                     </div>
-                    <Badge variant={
-    mechanic.availability_status === "available"
-      ? "default"
-      : "secondary"
-  }>
-                      <Badge>{mechanic.availability_status}</Badge>
-                    </Badge>
+                    <Badge className="border-white"
+                        variant={
+                          mechanic.availability_status === "available"
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
+                        {mechanic.availability_status}
+                      </Badge>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     Active Jobs: {mechanic.jobs}

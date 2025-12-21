@@ -158,6 +158,21 @@ export const approveBooking = async (req, res) => {
       ]
     );
 
+   // ✅ ADD THIS HERE
+if (mechanic_id) {
+  await client.query(
+  `
+  INSERT INTO mechanic_profiles (user_id, availability_status)
+  VALUES ($1, 'busy')
+  ON CONFLICT (user_id)
+  DO UPDATE SET
+    availability_status = 'busy',
+    updated_at = NOW()
+  `,
+  [mechanic_id]
+);
+}
+
     await client.query("COMMIT");
 
     res.json({ message: "Booking approved & job card created" });
@@ -208,17 +223,22 @@ export const getMyMechanics = async (req, res) => {
     const result = await pool.query(
       `
       SELECT 
-        u.id,
-        u.name,
-        mp.hourly_rate,
-        mp.availability_status
-      FROM service_center_mechanics scm
-      JOIN users u ON u.id = scm.mechanic_id
-      LEFT JOIN mechanic_profiles mp ON mp.user_id = u.id
-      WHERE scm.service_center_id = (
-        SELECT id FROM service_centers WHERE manager_id = $1
-      )
-      AND scm.status = 'approved'
+  u.id,
+  u.name,
+  mp.hourly_rate,
+  COALESCE(mp.availability_status, 'available') AS availability_status,
+  COUNT(jc.id) FILTER (WHERE jc.status = 'open') AS jobs
+FROM service_center_mechanics scm
+JOIN users u ON u.id = scm.mechanic_id
+LEFT JOIN mechanic_profiles mp ON mp.user_id = u.id
+LEFT JOIN job_cards jc 
+  ON jc.assigned_mechanic = u.id
+ AND jc.status = 'open'
+WHERE scm.service_center_id = (
+  SELECT id FROM service_centers WHERE manager_id = $1
+)
+AND scm.status = 'approved'
+GROUP BY u.id, mp.hourly_rate, mp.availability_status
       `,
       [req.user.id]
     );
@@ -340,26 +360,30 @@ export const getJobCardsList = async (req, res) => {
     const result = await pool.query(
       `
       SELECT
-  jc.id AS job_card_id,
-  jc.status,
-  jc.created_at,
-  sb.service_type,
+        jc.id AS job_card_id,
+        jc.status,
+        jc.created_at,
 
-  v.make || ' ' || v.model AS vehicle,
+        ARRAY_AGG(DISTINCT s.name) AS service_type,
 
-  COALESCE(cu.first_name || ' ' || cu.last_name, cu.name) AS customer_name,
+        v.make || ' ' || v.model AS vehicle,
 
-  COALESCE(me.first_name || ' ' || me.last_name, me.name) AS mechanic_name
+        COALESCE(cu.first_name || ' ' || cu.last_name, cu.name) AS customer_name,
 
-FROM job_cards jc
-JOIN service_centers sc ON sc.id = jc.service_center_id
-JOIN service_bookings sb ON sb.id = jc.booking_id
-JOIN vehicles v ON v.id = jc.vehicle_id
-JOIN users cu ON cu.id = jc.customer_id
-LEFT JOIN users me ON me.id = jc.assigned_mechanic
-WHERE sc.manager_id = $1
-ORDER BY jc.created_at DESC;
+        COALESCE(me.first_name || ' ' || me.last_name, me.name) AS mechanic_name
 
+      FROM job_cards jc
+      JOIN service_centers sc ON sc.id = jc.service_center_id
+      JOIN service_bookings sb ON sb.id = jc.booking_id
+      LEFT JOIN new_booking_services nbs ON nbs.booking_id = sb.id
+      LEFT JOIN services s ON s.id = nbs.service_id
+      JOIN vehicles v ON v.id = jc.vehicle_id
+      JOIN users cu ON cu.id = jc.customer_id
+      LEFT JOIN users me ON me.id = jc.assigned_mechanic
+
+      WHERE sc.manager_id = $1
+      GROUP BY jc.id, v.make, v.model, cu.id, me.id
+      ORDER BY jc.created_at DESC;
       `,
       [managerId]
     );
@@ -955,6 +979,17 @@ export const generateInvoice = async (req, res) => {
     const jobCardId = req.params.id;
     const { tax = 0, discount = 0 } = req.body;
 
+    const mechRes = await pool.query(
+  `
+  SELECT assigned_mechanic
+  FROM job_cards
+  WHERE id = $1
+  `,
+  [jobCardId]
+);
+
+const mechanicId = mechRes.rows[0]?.assigned_mechanic;
+
     const jobRes = await pool.query(
       `
       SELECT total_parts_cost, total_labor_cost
@@ -1010,6 +1045,19 @@ export const generateInvoice = async (req, res) => {
       invoice_number,
       total_amount,
     });
+
+// 🔁 Free mechanic
+if (mechanicId) {
+  await pool.query(
+    `
+    UPDATE mechanic_profiles
+    SET availability_status = 'available',
+        updated_at = NOW()
+    WHERE user_id = $1
+    `,
+    [mechanicId]
+  );
+}
   } catch (err) {
     console.error("Generate invoice error:", err);
     res.status(500).json({ message: "Failed to generate invoice" });

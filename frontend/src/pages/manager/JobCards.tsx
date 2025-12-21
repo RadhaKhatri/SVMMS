@@ -42,12 +42,13 @@ const JobCards = () => {
   const getStatusBadge = (status: string) => {
     const map: Record<string, string> = {
       open: "bg-yellow-500/20 text-yellow-600",
-      "in-service": "bg-blue-500/20 text-blue-600",
+      "in-service": "bg-blue-500/20 text-blue-600 ",
       completed: "bg-green-500/20 text-green-600",
+      
     };
 
     return (
-      <Badge className={map[status] || "bg-gray-500/20"}>
+      <Badge className={map[status] || "bg-gray-700 text-white"}>
         {status.toUpperCase()}
       </Badge>
     );
@@ -63,16 +64,20 @@ const JobCards = () => {
         )}
 
         {jobCards.map((jc) => (
-          <Card key={jc.job_card_id} className="bg-card/60">
+          <Card key={jc.job_card_id} className="bg-card/60 border-white/30 ">
             <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle>{jc.service_type}</CardTitle>
+              <div className="flex justify-between items-center ">
+                <CardTitle>
+  {Array.isArray(jc.service_type)
+    ? jc.service_type.join(", ")
+    : jc.service_type || "Service Job"}
+</CardTitle>
                 {getStatusBadge(jc.status)}
               </div>
             </CardHeader> 
 
-            <CardContent className="flex justify-between items-center">
-              <div className="text-sm space-y-1">
+            <CardContent className="flex justify-between items-center ">
+              <div className="text-sm space-y-1 ">
                 <div><b>Customer:</b> {jc.customer_name}</div>
                 <div><b>Vehicle:</b> {jc.vehicle}</div>
                 <div>
@@ -81,7 +86,7 @@ const JobCards = () => {
                 </div>
               </div>
 
-              <Button
+              <Button className="border-white/30"
                 variant="outline"
                 onClick={() =>
                   navigate(`/manager/job-cards/${jc.job_card_id}`)
