@@ -13,9 +13,6 @@ const Invoices = () => {
   const [invoices, setInvoices] = useState<any[]>([]);
 const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
 
-const [selectedLabor, setSelectedLabor] = useState<any[]>([]);
-const [selectedParts, setSelectedParts] = useState<any[]>([]);
-
 const token = localStorage.getItem("token");
 
 useEffect(() => {
@@ -55,9 +52,7 @@ const openInvoice = async (id: number) => {
     const res = await axios.get(`http://localhost:5000/api/manager/invoice/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    setSelectedInvoice(res.data.invoice);
-    setSelectedLabor(res.data.labor);
-    setSelectedParts(res.data.parts);
+    setSelectedInvoice(res.data);
   } catch (err) {
     console.error("Invoice detail error", err);
   }
@@ -72,10 +67,10 @@ const openInvoice = async (id: number) => {
           SVMMS <span className="text-primary">Pro</span>
         </h2>
         <p className="text-sm text-muted-foreground">
-          {invoice.service_center_name}
+          {invoice.service_center?.name}
         </p>
         <p className="text-sm text-muted-foreground">
-          {invoice.service_center_address}, {invoice.city}
+            {invoice.service_center?.address}, {invoice.service_center?.city}
         </p>
       </div>
 
@@ -108,22 +103,22 @@ const openInvoice = async (id: number) => {
       <div>
         <h3 className="font-semibold mb-2 text-foreground">Bill To:</h3>
         <p className="text-sm text-foreground">
-          {invoice.first_name} {invoice.last_name}
+          {invoice.customer?.name}
         </p>
-        <p className="text-sm text-muted-foreground">{invoice.email}</p>
-        <p className="text-sm text-muted-foreground">{invoice.phone}</p>
+        <p className="text-sm text-muted-foreground">{invoice.customer?.email}</p>
+        <p className="text-sm text-muted-foreground">{invoice.customer?.phone}</p>
       </div>
 
       <div>
         <h3 className="font-semibold mb-2 text-foreground">Vehicle:</h3>
         <p className="text-sm text-foreground">
-          {invoice.make} {invoice.model} ({invoice.year})
+          {invoice.vehicle?.make} {invoice.vehicle?.model} ({invoice.vehicle?.year})
         </p>
         <p className="text-sm text-muted-foreground">
-          VIN: {invoice.vin}
+          VIN: {invoice.vehicle?.vin}
         </p>
         <p className="text-sm text-muted-foreground">
-          Service Type: {invoice.service_type}
+          Service Type: {invoice.services?.join(", ") || "—"}
         </p>
       </div>
     </div>
@@ -146,14 +141,14 @@ const openInvoice = async (id: number) => {
           <tr className="border-t bg-white/10">
             <td className="p-4 text-sm text-foreground">Labor Charges</td>
             <td className="p-4 text-sm text-right text-foreground">
-              {formatCurrency(invoice.labor_total)}
+              {formatCurrency(invoice.costs?.labor)}
             </td>
           </tr>
 
           <tr className="border-t bg-white/10">
             <td className="p-4 text-sm text-foreground">Parts & Materials</td>
             <td className="p-4 text-sm text-right text-foreground">
-              {formatCurrency(invoice.parts_total)}
+              {formatCurrency(invoice.costs?.parts)}
             </td>
           </tr>
 
@@ -163,29 +158,29 @@ const openInvoice = async (id: number) => {
             </td>
             <td className="p-4 text-sm text-right font-semibold text-foreground">
               {formatCurrency(
-                Number(invoice.parts_total) + Number(invoice.labor_total)
-              )}
+  Number(invoice.costs?.labor) + Number(invoice.costs?.parts)
+)}
             </td>
           </tr>
 
           <tr className="border-t bg-white/10">
             <td className="p-4 text-sm text-foreground">Tax</td>
             <td className="p-4 text-sm text-right text-foreground">
-              {formatCurrency(invoice.tax)}
+              {formatCurrency(invoice.costs?.tax)}
             </td>
           </tr>
 
           <tr className="border-t bg-white/10">
             <td className="p-4 text-sm text-foreground">Discount</td>
             <td className="p-4 text-sm text-right text-foreground">
-              {formatCurrency(invoice.discount)}
+              {formatCurrency(invoice.costs?.discount)}
             </td>
           </tr>
 
           <tr className="border-t bg-primary/10">
             <td className="p-4 font-bold text-foreground">TOTAL</td>
             <td className="p-4 text-right font-bold text-2xl text-primary">
-              {formatCurrency(invoice.total_amount)}
+              {formatCurrency(invoice.costs?.total)}
             </td>
           </tr>
         </tbody>
@@ -253,11 +248,12 @@ const downloadInvoice = async (id: number) => {
 
                       </div>
                       <div className="text-sm text-muted-foreground">
-                          {invoice.make} {invoice.model} ({invoice.year})
+                          {invoice.vehicle?.make} {invoice.vehicle?.model} ({invoice.vehicle?.year})
                         </div>
 
                         <div className="text-sm text-muted-foreground">
-                          {invoice.service_type} • {formatDate(invoice.issued_at)}
+                          
+{invoice.services?.length ? invoice.services.join(", ") : "—"} • {formatDate(invoice.issued_at)}
                         </div>
 
                     </div>

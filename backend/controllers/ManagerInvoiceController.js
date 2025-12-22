@@ -7,140 +7,193 @@ import nodemailer from "nodemailer";
 /* =========================================
    GET ALL INVOICES (CUSTOMER)
 ========================================= */
-export const getMyInvoices = async (req, res) => {
+export const getManagerInvoices = async (req, res) => {
   try {
-     const result = await pool.query(
+    const result = await pool.query(
       `
-   SELECT
-  i.id,
-  i.invoice_number,
-  i.parts_total,
-  i.labor_total,
-  i.tax,
-  i.discount,
-  i.total_amount,
-  i.status,
-  i.issued_at,
+      SELECT
+        i.id,
+        i.invoice_number,
+        i.status,
+        i.issued_at,
+        i.total_amount,
 
-  jc.id AS job_card_id,
+        sb.service_type,
 
-  u.first_name,
-  u.last_name,
-  u.email,
-  u.phone,
-  u.address AS customer_address,
+        v.make,
+        v.model,
+        v.year,
+        v.vin
 
-  v.make,
-  v.model,
-  v.year,
-  v.vin,
+      FROM invoices i
+      JOIN job_cards jc ON jc.id = i.job_card_id
+      JOIN service_bookings sb ON sb.id = jc.booking_id
+      JOIN vehicles v ON v.id = sb.vehicle_id
+      JOIN service_centers sc ON sc.id = sb.service_center_id
 
-  sb.service_type,
-
-  sc.name AS service_center_name,
-  sc.address AS service_center_address,
-  sc.city
-FROM invoices i
-JOIN job_cards jc ON jc.id = i.job_card_id
-JOIN service_bookings sb ON sb.id = jc.booking_id  -- booking first
-JOIN users u ON u.id = sb.customer_id             -- user via booking
-JOIN vehicles v ON v.id = jc.vehicle_id
-JOIN service_centers sc ON sc.id = jc.service_center_id
-WHERE sc.manager_id = $1
-ORDER BY i.issued_at DESC
-
+      WHERE sc.manager_id = $1
+      ORDER BY i.issued_at DESC
       `,
       [req.user.id]
     );
 
-    res.json(result.rows);
+    res.json(
+      result.rows.map(r => ({
+        id: r.id,
+        invoice_number: r.invoice_number,
+        status: r.status,
+        issued_at: r.issued_at,
+        total_amount: Number(r.total_amount),
+
+        vehicle: {
+          make: r.make,
+          model: r.model,
+          year: r.year,
+          vin: r.vin,
+        },
+
+        services: r.service_type ? [r.service_type] : [],
+      }))
+    );
   } catch (err) {
-    console.error("Get invoices error:", err);
+    console.error("Get manager invoices error:", err);
     res.status(500).json({ message: "Failed to fetch invoices" });
   }
 };
+
 
 /* =========================================
    GET SINGLE INVOICE (FULL DETAILS)
 ========================================= */
 export const getInvoiceById = async (req, res) => {
-  const { id } = req.params;
-
   try {
-    /* 🔹 Invoice + customer + vehicle */
-    const invoiceRes = await pool.query(
+    const { id } = req.params;
+    const managerId = req.user.id;
+
+    const result = await pool.query(
       `
-   SELECT
-  i.*,
-  u.first_name,
-  u.last_name,
-  u.email,
-  u.phone,
-  u.address AS customer_address,
+      SELECT
+  i.id AS invoice_id,
+  i.invoice_number,
+  i.status,
+  i.issued_at,
+  i.labor_total,
+  i.parts_total,
+  i.tax,
+  i.discount,
+  i.total_amount,
+
+  jc.id AS job_card_id,
+
+  sb.preferred_date,
+  sb.preferred_time,
+
   v.make,
   v.model,
   v.year,
+  v.engine_type,
   v.vin,
-  sb.service_type,
+  v.mileage,
+
+  /* ✅ STRONG NAME LOGIC */
+  COALESCE(
+    NULLIF(TRIM(cu.first_name || ' ' || cu.last_name), ''),
+    cu.name
+  ) AS customer_name,
+
+  cu.email AS customer_email,
+  cu.phone AS customer_phone,
+
+  me.id AS mechanic_id,
+  COALESCE(
+    NULLIF(TRIM(me.first_name || ' ' || me.last_name), ''),
+    me.name
+  ) AS mechanic_name,
+
   sc.name AS service_center_name,
   sc.address AS service_center_address,
   sc.city,
-  sc.contact_number
+
+  /* ✅ STRONG SERVICE LOGIC */
+  COALESCE(
+    (
+      SELECT ARRAY_AGG(s.name ORDER BY s.name)
+      FROM new_booking_services nbs
+      JOIN services s ON s.id = nbs.service_id
+      WHERE nbs.booking_id = sb.id
+    ),
+    '{}'
+  ) AS services
+
 FROM invoices i
 JOIN job_cards jc ON jc.id = i.job_card_id
-JOIN service_bookings sb ON sb.id = jc.booking_id  
-JOIN users u ON u.id = sb.customer_id             
-JOIN vehicles v ON v.id = jc.vehicle_id
-JOIN service_centers sc ON sc.id = jc.service_center_id
-WHERE i.id = $1 AND sc.manager_id = $2
+JOIN service_bookings sb ON sb.id = jc.booking_id
+JOIN vehicles v ON v.id = sb.vehicle_id
+JOIN users cu ON cu.id = sb.customer_id
+LEFT JOIN users me ON me.id = jc.assigned_mechanic
+JOIN service_centers sc ON sc.id = sb.service_center_id
+
+WHERE i.id = $1
+  AND sc.manager_id = $2;
       `,
-      [id, req.user.id]
+      [id, managerId]
     );
 
-    if (invoiceRes.rows.length === 0) {
+    console.log("Invoice query result:", result.rows); // ✅ log result
+
+    if (!result.rows.length) {
       return res.status(404).json({ message: "Invoice not found" });
     }
 
-    const invoice = invoiceRes.rows[0];
+    const r = result.rows[0];
+    console.log("SERVICES (service_type):", r.service_type); // ✅ check service_type
+    console.log("SERVICES:", r.services); // should be array
 
-    /* 🔹 Labor Tasks */
-    const laborRes = await pool.query(
-      `
-      SELECT
-        description,
-        hours,
-        labor_rate,
-        total_cost
-      FROM job_tasks
-      WHERE job_card_id = $1
-      `,
-      [invoice.job_card_id]
-    );
+   res.json({
+  id: r.invoice_id,
+  invoice_number: r.invoice_number,
+  status: r.status,
+  issued_at: r.issued_at,
 
-    /* 🔹 Parts Used */
-    const partsRes = await pool.query(
-      `
-      SELECT
-        p.name,
-        jp.quantity_used,
-        jp.unit_price,
-        jp.total_price
-      FROM job_parts jp
-      JOIN parts p ON p.id = jp.part_id
-      WHERE jp.job_card_id = $1
-      `,
-      [invoice.job_card_id]
-    );
+  customer: {
+    name: r.customer_name,
+    email: r.customer_email,
+    phone: r.customer_phone,
+  },
 
-    res.json({
-      invoice,
-      labor: laborRes.rows,
-      parts: partsRes.rows
-    });
+  vehicle: {
+    make: r.make,
+    model: r.model,
+    year: r.year,
+    engine_type: r.engine_type,
+    vin: r.vin,
+    mileage: r.mileage,
+  },
 
+  service_center: {
+    name: r.service_center_name,
+    address: r.service_center_address,
+    city: r.city,
+  },
+
+  mechanic: {
+    id: r.mechanic_id,
+    name: r.mechanic_name,
+  },
+
+  services: r.services, // ✅ always array
+
+  costs: {
+    labor: Number(r.labor_total),
+    parts: Number(r.parts_total),
+    tax: Number(r.tax),
+    discount: Number(r.discount),
+    total: Number(r.total_amount),
+  },
+});
   } catch (err) {
     console.error("Invoice detail error:", err);
-    res.status(500).json({ message: "Failed to fetch invoice details" });
+    res.status(500).json({ message: "Failed to load invoice" });
   }
 };
 
@@ -150,7 +203,7 @@ export const downloadInvoicePDF = async (req, res) => {
 
   try {
     const { rows } = await pool.query(
-      `
+     `
       SELECT
         i.invoice_number,
         i.labor_total,
@@ -161,17 +214,29 @@ export const downloadInvoicePDF = async (req, res) => {
         i.status,
         i.issued_at,
 
-        u.first_name,
-        u.last_name,
-        u.email,
-        u.phone,
+        /* ✅ STRONG NAME */
+        COALESCE(
+          NULLIF(TRIM(cu.first_name || ' ' || cu.last_name), ''),
+          cu.name
+        ) AS customer_name,
+        cu.email,
+        cu.phone,
 
         v.make,
         v.model,
         v.year,
         v.vin,
 
-        sb.service_type,
+        /* ✅ STRONG SERVICES */
+        COALESCE(
+          (
+            SELECT ARRAY_AGG(s.name ORDER BY s.name)
+            FROM new_booking_services nbs
+            JOIN services s ON s.id = nbs.service_id
+            WHERE nbs.booking_id = sb.id
+          ),
+          '{}'
+        ) AS services,
 
         sc.name AS service_center_name,
         sc.address AS service_center_address,
@@ -180,10 +245,12 @@ export const downloadInvoicePDF = async (req, res) => {
       FROM invoices i
       JOIN job_cards jc ON jc.id = i.job_card_id
       JOIN service_bookings sb ON sb.id = jc.booking_id
-      JOIN users u ON u.id = jc.customer_id
-      JOIN vehicles v ON v.id = jc.vehicle_id
-      JOIN service_centers sc ON sc.id = jc.service_center_id
-      WHERE i.id = $1 AND sc.manager_id = $2
+      JOIN users cu ON cu.id = sb.customer_id
+      JOIN vehicles v ON v.id = sb.vehicle_id
+      JOIN service_centers sc ON sc.id = sb.service_center_id
+
+      WHERE i.id = $1
+        AND sc.manager_id = $2
       `,
       [id, req.user.id]
     );
@@ -241,7 +308,7 @@ export const downloadInvoicePDF = async (req, res) => {
 
     doc.fontSize(11).fillColor("#020617").text("Bill To:", 40, y);
     doc.fontSize(10).fillColor("#334155");
-    doc.text(`${inv.first_name} ${inv.last_name}`, 40, y + 15);
+    doc.text(inv.customer_name, 40, y + 15);
     doc.text(inv.email, 40, y + 30);
     doc.text(inv.phone, 40, y + 45);
 
@@ -249,7 +316,7 @@ export const downloadInvoicePDF = async (req, res) => {
     doc.fontSize(10).fillColor("#334155");
     doc.text(`${inv.make} ${inv.model} (${inv.year})`, 320, y + 15);
     doc.text(`VIN: ${inv.vin}`, 320, y + 30);
-    doc.text(`Service: ${inv.service_type}`, 320, y + 45);
+    doc.text(`Service: ${inv.services.length ? inv.services.join(", ") : "—"}`, 320, y + 45);
 
     /* ================= TABLE HEADER ================= */
     y = 220;
@@ -269,7 +336,7 @@ export const downloadInvoicePDF = async (req, res) => {
       doc.font(bold ? "Helvetica-Bold" : "Helvetica");
       doc.fillColor("#020617").fontSize(10);
       doc.text(label, 50, y);
-      doc.text(`₹ ${num(value).toFixed(2)}`, 450, y, { align: "right" });
+      doc.text(`Rs ${num(value).toFixed(2)}`, 450, y, { align: "right" });
       doc.moveTo(40, y + 18).lineTo(555, y + 18).strokeColor("#e2e8f0").stroke();
     };
 
@@ -287,7 +354,7 @@ export const downloadInvoicePDF = async (req, res) => {
 
     doc.font("Helvetica-Bold").fontSize(12).fillColor("#0c4a6e");
     doc.text("TOTAL AMOUNT", 50, y + 8);
-    doc.text(`₹ ${num(inv.total_amount).toFixed(2)}`, 450, y + 8, {
+    doc.text(`Rs ${num(inv.total_amount).toFixed(2)}`, 450, y + 8, {
       align: "right",
     });
 
