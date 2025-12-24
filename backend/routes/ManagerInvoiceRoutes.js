@@ -1,5 +1,5 @@
 import express from "express";
-import { getManagerInvoices, getInvoiceById,downloadInvoicePDF} from "../controllers/ManagerInvoiceController.js";
+import { getManagerInvoices, getInvoiceById,downloadInvoicePDF,sendInvoiceByEmail} from "../controllers/ManagerInvoiceController.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -18,5 +18,6 @@ const managerOnly = (req, res, next) => {
 router.get("/", authenticateUser, managerOnly, getManagerInvoices);
 router.get("/:id", authenticateUser,managerOnly, getInvoiceById);
 router.get("/:id/pdf", authenticateUser,managerOnly, downloadInvoicePDF);
+router.post( "/:id/email", authenticateUser,managerOnly, sendInvoiceByEmail);
 
 export default router;

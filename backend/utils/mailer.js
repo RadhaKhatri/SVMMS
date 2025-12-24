@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 /* =====================================================
    SHARED TRANSPORT CREATOR (SAFE & SIMPLE)
 ===================================================== */
-const createTransporter = () => {
+export const createTransporter = () => {
   return nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -37,4 +37,3 @@ export const sendResetEmail = async (to, link) => {
     throw err;
   }
 };
-

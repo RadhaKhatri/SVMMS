@@ -2,32 +2,89 @@ import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, DollarSign, TrendingUp, Users, Wrench } from "lucide-react";
 import { CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useEffect, useState } from "react";
+import axios from "axios";
+
+const COLORS = [
+  "hsl(195, 100%, 50%)",
+  "hsl(210, 100%, 60%)",
+  "hsl(142, 76%, 45%)",
+  "hsl(38, 92%, 55%)",
+  "hsl(215, 35%, 40%)",
+];
 
 const AdminDashboard = () => {
-  const stats = [
-    { title: "Total Revenue", value: "$45,231", change: "+12.5%", icon: DollarSign },
-    { title: "Active Customers", value: "1,284", change: "+8.2%", icon: Users },
-    { title: "Vehicles Serviced", value: "342", change: "+15.3%", icon: Car },
-    { title: "Services Completed", value: "856", change: "+22.1%", icon: Wrench },
-  ];
 
-  const revenueData = [
-    { month: "Jan", revenue: 12000 }, { month: "Feb", revenue: 15000 }, { month: "Mar", revenue: 18000 },
-    { month: "Apr", revenue: 22000 }, { month: "May", revenue: 25000 }, { month: "Jun", revenue: 28000 },
-  ];
+  const [stats, setStats] = useState<any>(null);
+const [revenueData, setRevenueData] = useState<any[]>([]);
+const [serviceData, setServiceData] = useState<any[]>([]);
+const [topMechanics, setTopMechanics] = useState<any[]>([]);
+const [loading, setLoading] = useState(true);
 
-  const serviceData = [
-    { name: "Oil Change", value: 35 }, { name: "Brake Service", value: 25 }, { name: "Tire Service", value: 20 },
-    { name: "Inspection", value: 12 }, { name: "Other", value: 8 },
-  ];
+useEffect(() => {
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-  const COLORS = ["hsl(195, 100%, 50%)", "hsl(210, 100%, 60%)", "hsl(142, 76%, 45%)", "hsl(38, 92%, 55%)", "hsl(215, 35%, 40%)"];
+      const res = await axios.get(
+        "http://localhost:5000/api/admin/dashboard",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-  const topMechanics = [
-    { name: "Mike Johnson", completed: 45, rating: 4.9 },
-    { name: "Sarah Williams", completed: 42, rating: 4.8 },
-    { name: "Tom Brown", completed: 38, rating: 4.7 },
-  ];
+      setStats(res.data.stats);
+      setRevenueData(res.data.revenueTrend);
+      setServiceData(res.data.serviceDistribution);
+      setTopMechanics(res.data.topMechanics);
+    } catch (error) {
+      console.error("Failed to load admin dashboard", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchDashboardData();
+}, []);
+
+const statsConfig = stats
+  ? [
+      {
+        title: "Total Revenue",
+        value: `₹${Number(stats.totalRevenue).toLocaleString()}`,
+        icon: DollarSign,
+      },
+      {
+        title: "Active Customers",
+        value: stats.activeCustomers,
+        icon: Users,
+      },
+      {
+        title: "Vehicles Serviced",
+        value: stats.vehiclesServiced,
+        icon: Car,
+      },
+      {
+        title: "Services Completed",
+        value: stats.servicesCompleted,
+        icon: Wrench,
+      },
+    ]
+  : [];
+
+
+
+if (loading) {
+  return (
+    <DashboardLayout role="admin">
+      <div className="p-6 text-center text-muted-foreground">
+        Loading dashboard...
+      </div>
+    </DashboardLayout>
+  );
+}
 
   return (
     <DashboardLayout role="admin">
@@ -38,7 +95,7 @@ const AdminDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, idx) => (
+          {statsConfig.map((stat, idx) => (
             <Card key={idx} className="bg-card/50 bg-white/10 hover:border-primary/30 transition-all group">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
@@ -49,7 +106,7 @@ const AdminDashboard = () => {
               <CardContent>
                 <div className="text-4xl font-bold text-foreground">{stat.value}</div>
                 <p className="text-xs text-success mt-1 flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3" /> {stat.change} from last month
+                  <TrendingUp className="h-3 w-3" /> {stat.value} from last month
                 </p>
               </CardContent>
             </Card>

@@ -26,6 +26,11 @@ import MechanicProfile from "@/pages/mechanic/MechanicProfile";
 import ServiceCenterRequests from "@/pages/mechanic/ServiceCenterRequests";
 import MechanicsRequest from "@/pages/manager/MechanicRequests";
 import ManagerInvoice from "@/pages/manager/ManagerInvoice";
+import AdminUsers from "@/pages/admin/AdminUsers";
+import AdminUserDetails from "@/pages/admin/AdminUserDetails";
+import AdminServiceCenters from "@/pages/admin/AdminServiceCenters";
+import AdminServiceCenterDetails from "@/pages/admin/AdminServiceCenterDetails";
+import AdminInventory from "@/pages/admin/AdminInventory";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +72,11 @@ const App = () => (
           <Route path="/manager/mechanics" element={<MechanicsRequest />} />
           <Route path="/mechanic/job-cards" element={<MechanicJobCards />} />
           <Route path="/manager/invoice" element={<ManagerInvoice />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/users/:id" element={<AdminUserDetails />} />
+          <Route path="/admin/service_centers" element={<AdminServiceCenters />} />
+          <Route path="/admin/service_centers/:id" element={<AdminServiceCenterDetails />} />
+          <Route path="/admin/inventory" element={<AdminInventory />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

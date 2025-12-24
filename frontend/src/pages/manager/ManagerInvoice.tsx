@@ -6,14 +6,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Download, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
-
+import { DialogDescription } from "@/components/ui/dialog";
 
 const Invoices = () => {
   
   const [invoices, setInvoices] = useState<any[]>([]);
 const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-
+const [email, setEmail] = useState("");
 const token = localStorage.getItem("token");
+const [loadingInvoice, setLoadingInvoice] = useState(false);
 
 useEffect(() => {
   if (token) fetchInvoices();
@@ -49,14 +50,19 @@ const formatCurrency = (amount: number) =>
  
 const openInvoice = async (id: number) => {
   try {
-    const res = await axios.get(`http://localhost:5000/api/manager/invoice/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    setLoadingInvoice(true);
+    const res = await axios.get(
+      `http://localhost:5000/api/manager/invoice/${id}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
     setSelectedInvoice(res.data);
   } catch (err) {
     console.error("Invoice detail error", err);
+  } finally {
+    setLoadingInvoice(false);
   }
 };
+
   const InvoiceDetail = ({ invoice }: { invoice: any }) => (
   <div className="space-y-6">
 
@@ -194,6 +200,22 @@ const openInvoice = async (id: number) => {
   </div>
 );
 
+const sendInvoiceEmail = async (id: number) => {
+  try {
+    await axios.post(
+      `http://localhost:5000/api/manager/invoice/${id}/email`,
+      { email },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    alert("Invoice sent successfully");
+  } catch (err) {
+    console.error("Email send failed", err);
+    alert("Failed to send invoice");
+  }
+};
+
 const downloadInvoice = async (id: number) => {
   try {
     const res = await axios.get(
@@ -214,6 +236,14 @@ const downloadInvoice = async (id: number) => {
     console.error("Download failed", err);
   }
 };
+
+{loadingInvoice && (
+  <p className="text-center text-muted-foreground">Loading invoice...</p>
+)}
+
+{selectedInvoice && !loadingInvoice && (
+  <InvoiceDetail invoice={selectedInvoice} />
+)}
 
   return (
     <DashboardLayout role="manager">
@@ -265,7 +295,7 @@ const downloadInvoice = async (id: number) => {
                           {formatCurrency(invoice.total_amount)}
                         </div>
 
-                    </div>
+                    </div>  
                     <div className="flex gap-2">
                       <Dialog>
                         <DialogTrigger asChild>
@@ -296,7 +326,24 @@ const downloadInvoice = async (id: number) => {
                             <Download className="mr-2 h-4 w-4" /> Download PDF
                           </Button>
                           )}
+                           
+                           {selectedInvoice && (
+                            <input
+                              type="email"
+                              placeholder="Enter email address"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              className="w-full px-4 py-2 rounded-md bg-white/10 border border-white/20 text-foreground focus:outline-none"
+                            />
+                          )}
 
+                           <Button
+  variant="outline"
+  className="w-full mt-2 bg-white/10"
+  onClick={() => sendInvoiceEmail(selectedInvoice.id)}
+>
+  📧 Send Invoice by Email
+</Button>
                         </DialogContent>
                       </Dialog>
                     </div>

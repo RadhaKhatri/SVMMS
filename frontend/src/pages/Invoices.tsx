@@ -13,6 +13,8 @@ const Invoices = () => {
   const [invoices, setInvoices] = useState([]);
 const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
 const token = localStorage.getItem("token");
+const [email, setEmail] = useState("");
+
 
 useEffect(() => {
   if (token) fetchInvoices();
@@ -52,6 +54,7 @@ const formatCurrency = (amount: number) =>
   }
 
   try {
+    setEmail("");
     const res = await axios.get(
       `http://localhost:5000/api/invoices/${id}`,
       {
@@ -221,6 +224,21 @@ const downloadInvoice = async (id: number) => {
     console.error("Download failed", err);
   }
 };
+const sendInvoiceEmail = async (id: number) => {
+  try {
+    await axios.post(
+      `http://localhost:5000/api/invoices/${id}/email`,
+      { email },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    alert("Invoice sent successfully");
+  } catch (err) {
+    console.error("Email send failed", err);
+    alert("Failed to send invoice");
+  }
+};
 
   return (
     <DashboardLayout role="customer">
@@ -293,11 +311,32 @@ const downloadInvoice = async (id: number) => {
                             <InvoiceDetail invoice={selectedInvoice.invoice} />
                           )}
 
-                          <Button className="w-full gradient-primary text-primary-foreground mt-4" onClick={() => downloadInvoice(selectedInvoice.invoice.id)}>
-                            <Download className="mr-2 h-4 w-4" /> Download PDF
-                          </Button>
+                          {selectedInvoice && (
+                            <Button
+                              className="w-full gradient-primary text-primary-foreground mt-4"
+                              onClick={() => downloadInvoice(selectedInvoice.invoice.id)}
+                            >
+                              <Download className="mr-2 h-4 w-4" /> Download PDF
+                            </Button>
+                          )}
 
-                        </DialogContent>
+                          <input
+                              type="email"
+                              placeholder="Enter email address"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              className="w-full px-4 py-2 rounded-md bg-white/10 border border-white/20 text-foreground focus:outline-none"
+                            />
+                            {selectedInvoice && (
+                            <Button
+                              variant="outline"
+                              className="w-full mt-2 bg-white/10"
+                              onClick={() => sendInvoiceEmail(selectedInvoice.invoice.id)}
+                            >
+                              📧 Send Invoice by Email
+                            </Button>
+                          )}
+                         </DialogContent>
                       </Dialog>
                     </div>
                   </div>

@@ -1,5 +1,5 @@
 import express from "express";
-import { getMyInvoices, getInvoiceById,downloadInvoicePDF} from "../controllers/invoiceController.js";
+import { getMyInvoices, getInvoiceById, downloadInvoicePDF, sendInvoiceByEmail} from "../controllers/invoiceController.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -18,5 +18,6 @@ const customer = (req, res, next) => {
 router.get("/", authenticateUser,customer, getMyInvoices);
 router.get("/:id", authenticateUser,customer, getInvoiceById);
 router.get("/:id/pdf", authenticateUser,customer, downloadInvoicePDF);
+router.post( "/:id/email", authenticateUser,customer, sendInvoiceByEmail);
 
 export default router;

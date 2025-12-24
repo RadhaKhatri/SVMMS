@@ -44,8 +44,7 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
     admin: [
       { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
       { to: "/admin/users", icon: Users, label: "Users" },
-      { to: "/admin/vehicles", icon: Car, label: "Vehicles" },
-      { to: "/admin/services", icon: Wrench, label: "Services" },
+      { to: "/admin/service_centers", icon: Wrench, label: "Service Centers" },
       { to: "/admin/inventory", icon: Package, label: "Inventory" },
       { to: "/admin/reports", icon: Receipt, label: "Reports" },
     ],
