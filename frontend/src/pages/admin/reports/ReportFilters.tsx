@@ -58,7 +58,7 @@ const ReportFilters = ({
   };
 
   return (
-    <Card className="p-4 space-y-4 bg-white/30">
+    <Card className="p-4 space-y-4">
       <div>
         <h3 className="font-semibold">Filters</h3>
         

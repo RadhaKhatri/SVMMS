@@ -207,14 +207,18 @@ export const getMechanicPerformance = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
-        u.name AS mechanic,
-        COUNT(jc.id) AS jobs_completed,
-        COALESCE(SUM(jt.total_cost),0) AS labor_earned
-      FROM users u
-      LEFT JOIN job_cards jc ON jc.assigned_mechanic = u.id AND jc.status='completed'
-      LEFT JOIN job_tasks jt ON jt.job_card_id = jc.id
-      WHERE u.role = 'mechanic'
-      GROUP BY u.name
+  u.name AS mechanic,
+  COUNT(jc.id) AS jobs_completed,
+  COALESCE(SUM(jt.total_cost),0) AS labor_earned
+FROM users u
+LEFT JOIN job_cards jc 
+  ON jc.assigned_mechanic = u.id 
+ AND jc.status='completed'
+LEFT JOIN job_tasks jt 
+  ON jt.job_card_id = jc.id
+WHERE u.role = 'mechanic'
+GROUP BY u.name
+
     `);
     res.json(result.rows);
   } catch (err) {
@@ -226,44 +230,87 @@ export const getMechanicPerformance = async (req, res) => {
    6️⃣ CUSTOMER REPORTS
 ========================= */
 
-export const getTopCustomers = async (req, res) => {
+export const getCustomerReport = async (req, res) => {
   try {
-    const result = await pool.query(`
+    const { from, to } = req.query;
+
+    const result = await pool.query(
+      `
       SELECT
-        u.name,
-        COUNT(jc.id) AS total_jobs,
-        COALESCE(SUM(i.total_amount),0) AS total_spent
+        u.name AS customer_name,
+        COUNT(DISTINCT jc.id) AS total_jobs,
+        COALESCE(SUM(i.total_amount), 0) AS total_spent
       FROM users u
-      JOIN job_cards jc ON jc.customer_id = u.id
-      JOIN invoices i ON i.job_card_id = jc.id AND i.status='paid'
-      GROUP BY u.name
+      LEFT JOIN job_cards jc 
+        ON jc.customer_id = u.id
+       AND jc.created_at BETWEEN $1 AND $2
+      LEFT JOIN invoices i 
+        ON i.job_card_id = jc.id
+       AND i.status = 'paid'
+      WHERE u.role = 'customer'
+      GROUP BY u.id, u.name
       ORDER BY total_spent DESC
-    `);
+      `,
+      [from, to]
+    );
+
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
+
 /* =========================
    7️⃣ PARTS & INVENTORY
 ========================= */
 
-export const getLowStockReport = async (req, res) => {
+export const getInventoryReport = async (req, res) => {
   try {
-    const result = await pool.query(`
+    const { service_center_id, category, from, to } = req.query;
+
+    let query = `
       SELECT
         sc.name AS service_center,
         p.name AS part_name,
+        p.category,
         i.quantity,
-        i.reorder_level
+        i.reorder_level,
+        i.updated_at
       FROM inventory i
       JOIN parts p ON p.id = i.part_id
       JOIN service_centers sc ON sc.id = i.service_center_id
-      WHERE i.quantity <= i.reorder_level
-    `);
+      WHERE 1=1
+    `;
+
+    const params = [];
+
+    if (service_center_id) {
+      params.push(service_center_id);
+      query += ` AND i.service_center_id = $${params.length}`;
+    }
+
+    if (category) {
+      params.push(category);
+      query += ` AND p.category = $${params.length}`;
+    }
+
+    if (from) {
+      params.push(from);
+      query += ` AND i.updated_at >= $${params.length}`;
+    }
+
+    if (to) {
+      params.push(to);
+      query += ` AND i.updated_at <= $${params.length}`;
+    }
+
+    query += ` ORDER BY i.quantity ASC`;
+
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -274,77 +321,173 @@ export const getLowStockReport = async (req, res) => {
 
 export const getBookingsByService = async (req, res) => {
   try {
-    const result = await pool.query(`
+    const { service_center_id, service_id, from, to } = req.query;
+    let query = `
       SELECT
-        s.name AS service,
-        COUNT(*) AS bookings
+        s.name AS service_name,
+        COUNT(*) AS total_bookings
       FROM new_booking_services nbs
       JOIN services s ON s.id = nbs.service_id
-      GROUP BY s.name
-    `);
+      JOIN service_bookings sb ON sb.id = nbs.booking_id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (service_center_id) {
+      params.push(service_center_id);
+      query += ` AND sb.service_center_id = $${params.length}`;
+    }
+
+    if (service_id) {
+      params.push(service_id);
+      query += ` AND s.id = $${params.length}`;
+    }
+
+    if (from) {
+      params.push(from);
+      query += ` AND sb.preferred_date >= $${params.length}`;
+    }
+
+    if (to) {
+      params.push(to);
+      query += ` AND sb.preferred_date <= $${params.length}`;
+    }
+
+    query += ` GROUP BY s.name ORDER BY total_bookings DESC`;
+
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
+// Bookings by Status with optional filters
+export const getBookingsByStatus = async (req, res) => {
+  try {
+    const { service_center_id, from, to } = req.query;
+    let query = `
+      SELECT
+        sb.status,
+        COUNT(*) AS count
+      FROM service_bookings sb
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (service_center_id) {
+      params.push(service_center_id);
+      query += ` AND sb.service_center_id = $${params.length}`;
+    }
+
+    if (from) {
+      params.push(from);
+      query += ` AND sb.preferred_date >= $${params.length}`;
+    }
+
+    if (to) {
+      params.push(to);
+      query += ` AND sb.preferred_date <= $${params.length}`;
+    }
+
+    query += ` GROUP BY sb.status ORDER BY sb.status`;
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 /* =========================
    9️⃣ LOCATION REPORTS
 ========================= */
 
 export const getCityWiseRevenue = async (req, res) => {
   try {
-    const result = await pool.query(`
+    const { from, to } = req.query;
+
+    let query = `
       SELECT
         sc.city,
         COALESCE(SUM(i.total_amount),0) AS revenue
       FROM service_centers sc
       JOIN job_cards jc ON jc.service_center_id = sc.id
       JOIN invoices i ON i.job_card_id = jc.id AND i.status='paid'
-      GROUP BY sc.city
-    `);
+    `;
+    
+    const params = [];
+    if (from && to) {
+      query += ` WHERE i.issued_at BETWEEN $1 AND $2`;
+      params.push(from, to);
+    }
+
+    query += ` GROUP BY sc.city ORDER BY revenue DESC`;
+
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ message: err.message });
-  }  
+  }
 };
+
 
 /* =========================
    🔟 TIME-BASED REPORTS
 ========================= */
-
 export const getPeakServiceTime = async (req, res) => {
   try {
+    const { service_center_id, from, to } = req.query;
+
+    let filters = [];
+    if (service_center_id) filters.push(`jc.service_center_id = ${service_center_id}`);
+    if (from) filters.push(`jc.created_at >= '${from}'`);
+    if (to) filters.push(`jc.created_at <= '${to} 23:59:59'`);
+
+    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
     const result = await pool.query(`
       SELECT
-        EXTRACT(HOUR FROM created_at) AS hour,
+        EXTRACT(HOUR FROM jc.created_at) AS hour,
         COUNT(*) AS jobs
-      FROM job_cards
+      FROM job_cards jc
+      ${whereClause}
       GROUP BY hour
       ORDER BY jobs DESC
     `);
+
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
+// Monthly Trend
 export const getMonthlyTrend = async (req, res) => {
   try {
+    const { service_center_id, from, to } = req.query;
+
+    let filters = [];
+    if (service_center_id) filters.push(`jc.created_at >= '${from}'`);
+    if (to) filters.push(`jc.created_at <= '${to} 23:59:59'`);
+    if (service_center_id) filters.push(`jc.service_center_id = ${service_center_id}`);
+
+    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
     const result = await pool.query(`
       SELECT
-        TO_CHAR(created_at, 'YYYY-MM') AS month,
+        TO_CHAR(jc.created_at, 'YYYY-MM') AS month,
         COUNT(*) AS jobs
-      FROM job_cards
+      FROM job_cards jc
+      ${whereClause}
       GROUP BY month
       ORDER BY month
     `);
+
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 export const emailReport = async (req, res) => {
   try {
@@ -365,78 +508,122 @@ export const emailReport = async (req, res) => {
   }
 };
 
-export const getReportData = async (section, filters) => {
-  const { startDate, endDate, city, serviceCenter } = filters;
-
-  const params = [];
-  let where = "WHERE 1=1";
-
-  if (startDate) {
-    params.push(startDate);
-    where += ` AND inv.issued_at >= $${params.length}`;
-  }
-
-  if (endDate) {
-    params.push(endDate);
-    where += ` AND inv.issued_at <= $${params.length}`;
-  }
-
-  if (city) {
-    params.push(city);
-    where += ` AND sc.city ILIKE '%' || $${params.length} || '%'`;
-  }
-
-  if (serviceCenter) {
-    params.push(serviceCenter);
-    where += ` AND sc.name ILIKE '%' || $${params.length} || '%'`;
-  }
-
-  const queries = {
-    revenue: `
-      SELECT
-        inv.invoice_number,
-        inv.issued_at AS date,
-        u.name AS customer,
-        sc.name AS service_center,
-        sc.city,
-        inv.labor_total,
-        inv.parts_total,
-        inv.tax,
-        inv.discount,
-        inv.total_amount
-      FROM invoices inv
-      JOIN job_cards jc ON inv.job_card_id = jc.id
-      JOIN users u ON jc.customer_id = u.id
-      JOIN service_centers sc ON jc.service_center_id = sc.id
-      ${where}
-      ORDER BY inv.issued_at DESC
-    `,
-
-    customers: `
-      SELECT
-        u.name,
-        u.email,
-        COUNT(inv.id) AS total_jobs,
-        SUM(inv.total_amount) AS total_spent
-      FROM users u
-      JOIN job_cards jc ON u.id = jc.customer_id
-      JOIN invoices inv ON jc.id = inv.job_card_id
-      ${where}
-      GROUP BY u.id
-      ORDER BY total_spent DESC
-    `,
+/* =========================
+   1️⃣ Fetch Data Dynamically
+========================= */
+const dummyRes = () => {
+  let data;
+  return {
+    json: (d) => { data = d; },
+    getData: () => data,
   };
-
-  if (!queries[section]) {
-    throw new Error("Invalid report section");
-  }
-
-  const { rows } = await pool.query(queries[section], params);
-  return rows;
 };
 
+const SECTION_ALIAS = {
+  jobcards: "jobs",
+  job_cards: "jobs",
+
+  service_centers: "centers",
+"service-centers": "centers", 
+
+  mechanics: "mechanics",
+  customers: "customers",
+  revenue: "revenue",
+  parts: "parts",
+};
+
+export const getReportData = async (section, filters = {}) => {
+  section = SECTION_ALIAS[section] || section; // ⭐ normalize
+
+  const req = { query: filters };
+  const res = dummyRes();
+
+  switch (section) {
+    case "revenue":
+      await getDetailedRevenueReport(req, res);
+      break;
+
+    case "jobs":
+      await getDetailedJobReport(req, res);
+      break;
+
+    case "centers":
+      await getServiceCenterPerformance(req, res);
+      break;
+
+    case "mechanics":
+      await getMechanicPerformance(req, res);
+      break;
+
+    case "customers":
+      await getCustomerReport(req, res);
+      break;
+
+    case "parts":
+      await getInventoryReport(req, res);
+      break;
+
+    case "bookings":
+      await getBookingsByService(req, res);
+      break;
+
+    case "location":
+      await getCityWiseRevenue(req, res);
+      break;
+
+    case "time":
+      await getPeakServiceTime(req, res);
+      break;
+
+    default:
+      throw new Error(`Invalid report section: ${section}`);
+  }
+
+  return res.getData();
+};
+
+
+/* =========================
+   2️⃣ Export PDF
+========================= */
+export const exportReportPDF = async (req, res) => {
+  try {
+    const { section, filters } = req.body;
+    const data = await getReportData(section, filters);
+
+    const doc = new PDFDocument({ margin: 30 });
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${section}_report.pdf`
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    doc.fontSize(18).text(`${section.toUpperCase()} REPORT`, { align: "center" });
+    doc.moveDown();
+
+    if (!data || data.length === 0) {
+      doc.text("No data available");
+    } else {
+      const headers = Object.keys(data[0]);
+      data.forEach(row => {
+        headers.forEach(h => doc.text(`${h}: ${row[h] ?? "-"}`));
+        doc.moveDown();
+      });
+    }
+
+    doc.end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+/* =========================
+   3️⃣ Export Excel
+========================= */
 export const exportReportExcel = async (req, res) => {
-   console.log("PDF EXPORT HIT", req.body);
   try {
     const { section, filters } = req.body;
     const data = await getReportData(section, filters);
@@ -444,15 +631,14 @@ export const exportReportExcel = async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Report");
 
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
       sheet.addRow(["No data available"]);
     } else {
-      sheet.columns = Object.keys(data[0]).map(key => ({
-        header: key.toUpperCase(),
-        key,
-        width: 20,
+      sheet.columns = Object.keys(data[0]).map(k => ({
+        header: k.toUpperCase(),
+        key: k,
+        width: 20
       }));
-
       data.forEach(row => sheet.addRow(row));
     }
 
@@ -460,7 +646,6 @@ export const exportReportExcel = async (req, res) => {
       "Content-Disposition",
       `attachment; filename=${section}_report.xlsx`
     );
-
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -469,48 +654,45 @@ export const exportReportExcel = async (req, res) => {
     await workbook.xlsx.write(res);
     res.end();
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
 
-export const exportReportPDF = async (req, res) => {
-  console.log("EXCEL EXPORT HIT", req.body);
-  try {
-    const { section, filters } = req.body;
-    const data = await getReportData(section, filters);
 
-    const doc = new PDFDocument({ margin: 30, size: "A4" });
-
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=${section}_report.pdf`
-    );
-    res.setHeader("Content-Type", "application/pdf");
-
-    doc.pipe(res);
-
-    doc.fontSize(18).text(`${section.toUpperCase()} REPORT`, { align: "center" });
-    doc.moveDown();
-
-    data.forEach(row => {
-      Object.entries(row).forEach(([k, v]) => {
-        doc.fontSize(10).text(`${k}: ${v}`);
-      });
-      doc.moveDown();
-    });
-
-    doc.end();
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
+/* =========================
+   4️⃣ Send Email with PDF
+========================= */
 export const sendReportEmail = async (req, res) => {
-  console.log("EMAIL HIT", req.body);
   try {
     const { email, section, filters } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email required" });
+    }
+
+    // 🔹 Get report data
     const data = await getReportData(section, filters);
 
+    // 🔹 Create Excel in memory
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Report");
+
+    if (!data || data.length === 0) {
+      sheet.addRow(["No data available"]);
+    } else {
+      sheet.columns = Object.keys(data[0]).map(k => ({
+        header: k.replace(/_/g, " ").toUpperCase(),
+        key: k,
+        width: 22,
+      }));
+
+      data.forEach(row => sheet.addRow(row));
+      sheet.getRow(1).font = { bold: true };
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    // 🔹 Email transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -519,23 +701,42 @@ export const sendReportEmail = async (req, res) => {
       },
     });
 
-    const content = data
-      .map(row =>
-        Object.entries(row)
-          .map(([k, v]) => `${k}: ${v}`)
-          .join(", ")
-      )
-      .join("\n");
-
+    // 🔹 Professional Email
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"Service Reports" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `${section.toUpperCase()} Report`,
-      text: content,
+      subject: `${section.toUpperCase()} Report send by SVMMS`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height:1.6">
+        <h2 style="color:#2563eb"> SMART VEHICLE MAINTENANCE
+AND SERVICE MANAGEMENT SYSTEM (SVMMS)</h2>
+          <h2 style="color:#2563eb">${section.toUpperCase()} Report</h2>
+          <p>Hello,</p>
+          <p>
+            Please find attached the <b>${section}</b> report generated from the system.
+          </p>
+          <p>
+            If you have any questions or need additional information, feel free to reply to this email.
+          </p>
+          <br/>
+          <p>Regards,<br/>
+          <b>SVMMS</b></p>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: `${section}_report.xlsx`,
+          content: buffer,
+        },
+      ],
     });
 
-    res.json({ message: "Email sent successfully" });
+    res.json({
+      success: true,
+      message: "Excel report emailed successfully",
+    });
   } catch (err) {
+    console.error("Email Error:", err);
     res.status(500).json({ message: err.message });
   }
 };

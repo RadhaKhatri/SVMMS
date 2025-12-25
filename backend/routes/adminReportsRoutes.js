@@ -5,15 +5,15 @@ import {
   getDetailedJobReport,
   getServiceCenterPerformance,
   getMechanicPerformance,
-  getTopCustomers,
-  getLowStockReport,
+  getCustomerReport,
+  getInventoryReport,
   getBookingsByService,
+  getBookingsByStatus,
   getCityWiseRevenue,
   getPeakServiceTime,
   getMonthlyTrend, 
     exportReportPDF,
   exportReportExcel,
-  emailReport,
   sendReportEmail,
 } from "../controllers/adminReportsController.js";
 
@@ -40,11 +40,12 @@ router.get("/admin/reports/service-centers", authenticateUser, adminOnly, getSer
 
 router.get("/admin/reports/mechanics", authenticateUser, adminOnly, getMechanicPerformance);
 
-router.get("/admin/reports/customers/top", authenticateUser, adminOnly, getTopCustomers);
+router.get("/admin/reports/customers", authenticateUser, adminOnly, getCustomerReport);
 
-router.get("/admin/reports/inventory/low-stock", authenticateUser, adminOnly, getLowStockReport);
+router.get("/admin/reports/inventory", authenticateUser, adminOnly, getInventoryReport);
 
 router.get("/admin/reports/bookings/services", authenticateUser, adminOnly, getBookingsByService);
+router.get("/admin/reports/bookings/status", authenticateUser, adminOnly, getBookingsByStatus);
 
 router.get("/admin/reports/locations/city-revenue", authenticateUser, adminOnly, getCityWiseRevenue);
 

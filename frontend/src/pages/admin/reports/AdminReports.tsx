@@ -27,7 +27,7 @@ const AdminReports = () => {
           <TabsList className="flex flex-wrap gap-2 bg-white/100">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="revenue">Revenue</TabsTrigger>
-            <TabsTrigger value="jobs">Jobs</TabsTrigger>
+            <TabsTrigger value="jobs">Job Cards</TabsTrigger>
             <TabsTrigger value="centers">Service Centers</TabsTrigger>
             <TabsTrigger value="mechanics">Mechanics</TabsTrigger>
             <TabsTrigger value="customers">Customers</TabsTrigger>
