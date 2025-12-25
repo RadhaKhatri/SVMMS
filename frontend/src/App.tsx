@@ -31,7 +31,8 @@ import AdminUserDetails from "@/pages/admin/AdminUserDetails";
 import AdminServiceCenters from "@/pages/admin/AdminServiceCenters";
 import AdminServiceCenterDetails from "@/pages/admin/AdminServiceCenterDetails";
 import AdminInventory from "@/pages/admin/AdminInventory";
-
+import AdminReports from "@/pages/admin/reports/AdminReports";
+  
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -77,6 +78,7 @@ const App = () => (
           <Route path="/admin/service_centers" element={<AdminServiceCenters />} />
           <Route path="/admin/service_centers/:id" element={<AdminServiceCenterDetails />} />
           <Route path="/admin/inventory" element={<AdminInventory />} />
+          <Route path="/admin/reports" element={<AdminReports />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

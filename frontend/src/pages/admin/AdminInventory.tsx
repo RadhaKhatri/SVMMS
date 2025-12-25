@@ -1,9 +1,8 @@
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PartsCatalog from "./PartsCatalog";
-import GlobalInventory from "./GlobalInventory";
-import LowStock from "./LowStock";
 import UsageLogs from "./UsageLogs";
+import MostUsedParts from "./MostUsedParts"; 
 
 const AdminInventory = () => {
   return (
@@ -19,8 +18,7 @@ const AdminInventory = () => {
         <Tabs defaultValue="parts">
           <TabsList>
             <TabsTrigger value="parts">Parts Catalog</TabsTrigger>
-            <TabsTrigger value="inventory">Global Inventory</TabsTrigger>
-            <TabsTrigger value="low">Low Stock</TabsTrigger>
+            <TabsTrigger value="most-used">Most Used Parts</TabsTrigger>
             <TabsTrigger value="logs">Usage Logs</TabsTrigger>
           </TabsList>
 
@@ -28,12 +26,8 @@ const AdminInventory = () => {
             <PartsCatalog />
           </TabsContent>
 
-          <TabsContent value="inventory">
-            <GlobalInventory />
-          </TabsContent>
-
-          <TabsContent value="low">
-            <LowStock />
+          <TabsContent value="most-used">
+            <MostUsedParts />
           </TabsContent>
 
           <TabsContent value="logs">

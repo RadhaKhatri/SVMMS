@@ -4,13 +4,18 @@ import axios from "axios";
 import { useState } from "react";
 
 const PartForm = ({ part, onClose, onSaved }: any) => {
+  
   const [form, setForm] = useState({
-    part_code: part?.part_code || "",
-    name: part?.name || "",
-    description: part?.description || "",
-    category: part?.category || "",
-    unit_price: part?.unit_price || "",
-  });
+  part_code: part?.part_code || "",
+  name: part?.name || "",
+  description: part?.description || "",
+  category: part?.category || "",
+  unit_price: part?.unit_price || "",
+  service_center_id: "",
+  quantity: "",
+  reorder_level: "",
+  location: "",
+});
 
   const save = async () => {
     const url = part

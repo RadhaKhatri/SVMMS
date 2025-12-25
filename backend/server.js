@@ -12,6 +12,7 @@ import managerRoutes from "./routes/managerRoutes.js";
 import mechanicRoutes from "./routes/mechanicsRoutes.js";
 import managerInvoiceRoutes from "./routes/ManagerInvoiceRoutes.js";
 import adminDashboardRoutes from "./routes/adminRoutes.js";
+import adminReportsRoutes from "./routes/adminReportsRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -36,6 +37,7 @@ app.use("/api/mechanic", mechanicRoutes);
 app.use("/api/manager", managerRoutes);
 app.use("/api/manager/invoice", managerInvoiceRoutes);
 app.use("/api", adminDashboardRoutes);
+app.use("/api", adminReportsRoutes);
 
 
 app.get("/", (req, res) => res.send("Server running!"));

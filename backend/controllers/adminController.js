@@ -300,68 +300,121 @@ export const getPartsCatalog = async (req, res) => {
 };
 
 export const createPart = async (req, res) => {
-  const { part_code, name, description, category, unit_price } = req.body;
+  const {
+    part_code,
+    name,
+    description,
+    category,
+    unit_price,
+    service_center_id, // ✅ NEW (optional)
+    quantity,          // ✅ NEW (optional)
+    reorder_level,
+    location
+  } = req.body;
 
-  await pool.query(
-    `INSERT INTO parts (part_code, name, description, category, unit_price)
-     VALUES ($1,$2,$3,$4,$5)`,
-    [part_code, name, description, category, unit_price]
-  );
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
 
-  res.json({ message: "Part added successfully" });
+    // 1️⃣ Create part
+    const partResult = await client.query(
+      `
+      INSERT INTO parts (part_code, name, description, category, unit_price)
+      VALUES ($1,$2,$3,$4,$5)
+      RETURNING id
+      `,
+      [part_code, name, description, category, unit_price]
+    );
+
+    const partId = partResult.rows[0].id;
+
+    // 2️⃣ OPTIONAL: create inventory
+    if (service_center_id && quantity) {
+      await client.query(
+        `
+        INSERT INTO inventory (service_center_id, part_id, quantity, reorder_level, location)
+        VALUES ($1,$2,$3,$4,$5)
+        ON CONFLICT (service_center_id, part_id)
+        DO UPDATE SET
+          quantity = inventory.quantity + EXCLUDED.quantity,
+          updated_at = NOW()
+        `,
+        [
+          service_center_id,
+          partId,
+          quantity,
+          reorder_level || 0,
+          location || null,
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+    res.json({ message: "Part & inventory saved successfully" });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    res.status(500).json({ message: "Failed to add part" });
+  } finally {
+    client.release();
+  }
 };
 
 export const updatePart = async (req, res) => {
   const { id } = req.params;
-  const { name, description, category, unit_price } = req.body;
+  const {
+    name,
+    description,
+    category,
+    unit_price,
+    service_center_id, // optional
+    quantity,          // optional
+    reorder_level,
+    location
+  } = req.body;
 
-  await pool.query(
-    `UPDATE parts
-     SET name=$1, description=$2, category=$3, unit_price=$4
-     WHERE id=$5`,
-    [name, description, category, unit_price, id]
-  );
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
 
-  res.json({ message: "Part updated" });
-};
+    // 1️⃣ Update part master
+    await client.query(
+      `
+      UPDATE parts
+      SET name=$1, description=$2, category=$3, unit_price=$4
+      WHERE id=$5
+      `,
+      [name, description, category, unit_price, id]
+    );
 
-/* ================= GLOBAL INVENTORY ================= */
+    // 2️⃣ OPTIONAL: add stock
+    if (service_center_id && quantity) {
+      await client.query(
+        `
+        INSERT INTO inventory (service_center_id, part_id, quantity, reorder_level, location)
+        VALUES ($1,$2,$3,$4,$5)
+        ON CONFLICT (service_center_id, part_id)
+        DO UPDATE SET
+          quantity = inventory.quantity + EXCLUDED.quantity,
+          updated_at = NOW()
+        `,
+        [
+          service_center_id,
+          id,
+          quantity,
+          reorder_level || 0,
+          location || null,
+        ]
+      );
+    }
 
-export const getGlobalInventory = async (req, res) => {
-  const result = await pool.query(`
-    SELECT 
-      i.id,
-      sc.name AS service_center,
-      p.part_code,
-      p.name,
-      p.category,
-      p.unit_price,
-      i.quantity,
-      i.reorder_level,
-      i.location
-    FROM inventory i
-    JOIN parts p ON p.id = i.part_id
-    JOIN service_centers sc ON sc.id = i.service_center_id
-    ORDER BY sc.name
-  `);
-
-  res.json(result.rows);
-};
-
-export const getLowStockGlobal = async (req, res) => {
-  const result = await pool.query(`
-    SELECT 
-      sc.name AS service_center,
-      p.name,
-      i.quantity,
-      i.reorder_level
-    FROM inventory i
-    JOIN parts p ON p.id = i.part_id
-    JOIN service_centers sc ON sc.id = i.service_center_id
-    WHERE i.quantity <= i.reorder_level
-  `);
-
-  res.json(result.rows);
+    await client.query("COMMIT");
+    res.json({ message: "Part updated & stock adjusted" });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    res.status(500).json({ message: "Update failed" });
+  } finally {
+    client.release();
+  }
 };
 
 /* ================= USAGE LOGS ================= */
@@ -381,6 +434,24 @@ export const getInventoryUsageLogs = async (req, res) => {
     JOIN service_centers sc ON sc.id = jc.service_center_id
     JOIN parts p ON p.id = jp.part_id
     ORDER BY jp.created_at DESC
+  `);
+
+  res.json(result.rows);
+};
+
+export const getMostUsedParts = async (req, res) => {
+  const result = await pool.query(`
+    SELECT
+      p.id AS part_id,
+      p.name AS part_name,
+      p.category,
+      SUM(jp.quantity_used) AS total_quantity_used,
+      SUM(jp.total_price) AS total_revenue
+    FROM job_parts jp
+    JOIN parts p ON p.id = jp.part_id
+    GROUP BY p.id, p.name, p.category
+    ORDER BY total_quantity_used DESC
+    LIMIT 10
   `);
 
   res.json(result.rows);

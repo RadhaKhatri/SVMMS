@@ -47,7 +47,7 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
       { to: "/admin/service_centers", icon: Wrench, label: "Service Centers" },
       { to: "/admin/inventory", icon: Package, label: "Inventory" },
       { to: "/admin/reports", icon: Receipt, label: "Reports" },
-    ],
+    ],  
   };
 
   const currentNav = navItems[role];

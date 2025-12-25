@@ -7,10 +7,8 @@ import { getAdminDashboardData,
         getPartsCatalog,
         createPart,
         updatePart,
-        getGlobalInventory,
-        getLowStockGlobal,
         getInventoryUsageLogs,
-          
+          getMostUsedParts
 } from "../controllers/adminController.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 const router = express.Router();
@@ -84,26 +82,6 @@ router.put(
 );
 
 /* =====================================
-   GLOBAL INVENTORY (ALL SERVICE CENTERS)
-===================================== */
-
-// View inventory of all service centers
-router.get(
-  "/admin/inventory",
-  authenticateUser,
-  adminOnly,
-  getGlobalInventory
-);
-
-// Low stock across all service centers
-router.get(
-  "/admin/inventory/low-stock",
-  authenticateUser,
-  adminOnly,
-  getLowStockGlobal
-);
-
-/* =====================================
    INVENTORY USAGE LOGS (AUDIT)
 ===================================== */
 
@@ -113,6 +91,13 @@ router.get(
   authenticateUser,
   adminOnly,
   getInventoryUsageLogs
+);
+
+router.get(
+  "/admin/inventory/most-used",
+  authenticateUser,
+  adminOnly,
+  getMostUsedParts
 );
 
 export default router;
