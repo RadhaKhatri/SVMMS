@@ -87,7 +87,7 @@ const JobCardReport = () => {
                 <TableCell>{r.customer_name}</TableCell>
                 <TableCell>{r.mechanic_name || "-"}</TableCell>
                 <TableCell>
-                  {r.make} {r.model} ({r.year})
+                  {r.make} {r.model} ({r.year}) 
                 </TableCell>
                 <TableCell>{r.service_center}</TableCell>
                 <TableCell>₹{r.total_labor_cost}</TableCell>

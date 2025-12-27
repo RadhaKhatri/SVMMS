@@ -20,7 +20,7 @@ const RevenueReport = () => {
     1
   )
     .toISOString()
-    .split("T")[0];
+    .split("T")[0]; 
 
   const todayDate = today.toISOString().split("T")[0];
 

@@ -9,7 +9,7 @@ const LineChartCard = ({ data, xKey, yKey, title }: any) => (
         <XAxis dataKey={xKey} />
         <YAxis />
         <Tooltip />
-        <Line dataKey={yKey} />
+        <Line dataKey={yKey} /> 
       </LineChart>
     </ResponsiveContainer>
   </Card>

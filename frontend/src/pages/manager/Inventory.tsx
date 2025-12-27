@@ -69,11 +69,11 @@ useEffect(() => {
           </div>
           </div>
 
-        {/* Add Part Button */}
+        {/* Add Part Button */} 
 <Button
   onClick={() => {
     setSelectedPart(null);
-    setFormOpen(true);
+    setFormOpen(true); 
   }}
 >
   <Plus className="mr-2 h-4 w-4" /> Add Part

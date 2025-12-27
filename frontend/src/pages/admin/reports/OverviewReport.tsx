@@ -11,7 +11,7 @@ const OverviewReport = () => {
     }).then(res => setData(res.data));
   }, []);
 
-  if (!data) return null;
+  if (!data) return null; 
 
   const items = [
     ["Total Revenue", `₹${data.total_revenue}`],

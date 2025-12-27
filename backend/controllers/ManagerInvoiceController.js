@@ -625,3 +625,53 @@ export const sendInvoiceByEmail = async (req, res) => {
     res.status(500).json({ message: "Failed to send invoice email" });
   }
 };
+
+/* =========================================
+   MARK INVOICE AS PAID (MANAGER)
+========================================= */
+export const markInvoiceAsPaid = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const managerId = req.user.id;
+
+    // ✅ Ensure invoice belongs to manager & is unpaid
+    const check = await pool.query(
+      `
+      SELECT i.id
+      FROM invoices i
+      JOIN job_cards jc ON jc.id = i.job_card_id
+      JOIN service_centers sc ON sc.id = jc.service_center_id
+      WHERE i.id = $1
+        AND sc.manager_id = $2
+        AND i.status = 'unpaid'
+      `,
+      [id, managerId]
+    );
+
+    if (!check.rows.length) {
+      return res.status(404).json({
+        message: "Invoice not found or already paid"
+      });
+    }
+
+    // ✅ Update status
+    await pool.query(
+      `
+      UPDATE invoices
+      SET status = 'paid'
+      WHERE id = $1
+      `,
+      [id]
+    );
+
+    res.json({
+      message: "Invoice marked as paid successfully"
+    });
+
+  } catch (err) {
+    console.error("Mark invoice paid error:", err);
+    res.status(500).json({
+      message: "Failed to update invoice status"
+    });
+  }
+};

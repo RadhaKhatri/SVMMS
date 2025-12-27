@@ -216,6 +216,29 @@ const sendInvoiceEmail = async (id: number) => {
   }
 };
 
+const markAsPaid = async (id: number) => {
+  try {
+    await axios.patch(
+      `http://localhost:5000/api/manager/invoice/${id}/pay`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    alert("Invoice marked as paid");
+
+    // refresh
+    fetchInvoices();
+    openInvoice(id);
+
+  } catch (err) {
+    console.error("Payment update failed", err);
+    alert("Failed to update invoice status");
+  }
+};
+
+
 const downloadInvoice = async (id: number) => {
   try {
     const res = await axios.get(
@@ -265,7 +288,7 @@ const downloadInvoice = async (id: number) => {
                         <span className="font-bold text-lg text-primary">
                           {invoice.invoice_number}
                         </span>
-
+                        
                         <Badge
                             className={
                               invoice.status === "paid"
@@ -296,6 +319,7 @@ const downloadInvoice = async (id: number) => {
                         </div>
 
                     </div>  
+
                     <div className="flex gap-2">
                       <Dialog>
                         <DialogTrigger asChild>
@@ -326,6 +350,16 @@ const downloadInvoice = async (id: number) => {
                             <Download className="mr-2 h-4 w-4" /> Download PDF
                           </Button>
                           )}
+
+                          {selectedInvoice?.status === "unpaid" && (
+  <Button
+    className="w-full mt-2 bg-success text-white"
+    onClick={() => markAsPaid(selectedInvoice.id)}
+  >
+    ✅ Mark as Paid
+  </Button>
+)}
+
                            
                            {selectedInvoice && (
                             <input

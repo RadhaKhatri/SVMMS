@@ -15,4 +15,4 @@ const BarChartCard = ({ data, xKey, yKey, title }: any) => (
   </Card>
 );
 
-export default BarChartCard;
+export default BarChartCard; 

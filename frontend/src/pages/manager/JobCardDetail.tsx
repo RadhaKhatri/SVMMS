@@ -22,7 +22,8 @@ const [taskRate, setTaskRate] = useState("");
 const [parts, setParts] = useState<any[]>([]);
 const [selectedPart, setSelectedPart] = useState<number | null>(null);
 const [partQty, setPartQty] = useState("");
-
+const [tax, setTax] = useState("");
+const [discount, setDiscount] = useState("");
 
 const fetchJobCard = async () => {
   try {
@@ -179,7 +180,10 @@ const generateInvoice = async () => {
   try {
     const res = await axios.post(
       `http://localhost:5000/api/manager/job-cards/${id}/invoice`,
-      {},
+      {
+        tax_percent: Number(tax || 0),
+        discount_percent: Number(discount || 0),
+      },
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -187,16 +191,35 @@ const generateInvoice = async () => {
       }
     );
 
-    alert(
-      `Invoice Generated\nInvoice No: ${res.data.invoice_number}\nTotal: ₹${res.data.total_amount}`
-    );
+    toast({
+      title: "Invoice Generated",
+      description: `Invoice No: ${res.data.invoice_number}`,
+    });
 
+    setTax("");
+    setDiscount("");
     fetchJobCard();
   } catch (err) {
-    console.error("Invoice generation failed", err);
-    alert("Failed to generate invoice");
+    toast({
+      title: "Invoice failed",
+      description: "Unable to generate invoice",
+      variant: "destructive",
+    });
   }
 };
+
+// ================= INVOICE CALCULATIONS =================
+const subtotal =
+  (job?.costs?.labor || 0) + (job?.costs?.parts || 0);
+
+const taxAmount =
+  (subtotal * Number(tax || 0)) / 100;
+
+const discountAmount =
+  (subtotal * Number(discount || 0)) / 100;
+
+const finalTotal =
+  subtotal + taxAmount - discountAmount;
 
 
   if (loading) return <div className="p-6">Loading...</div>;
@@ -275,12 +298,12 @@ const generateInvoice = async () => {
           </CardContent>
         </Card>
         {/* ================= Add Labor Task ================= */}
-<Card className="text-gray-900 dark:text-gray-100">
+<Card className="text-white dark:text-gray-100">
   <CardHeader>
     <CardTitle>Add Labor Task</CardTitle>
   </CardHeader>
   <div className="grid  gap-6">
-  <CardContent className="space-y-2 space-x-9 ">
+  <CardContent className=" text-black space-y-2 space-x-9 ">
     <input 
      type="text"
       placeholder="Task description"
@@ -312,12 +335,12 @@ const generateInvoice = async () => {
 </Card>
 
 {/* ================= Add Spare Parts ================= */}
-<Card className="text-gray-900 dark:text-gray-100 ">
+<Card className="text-white dark:text-gray-100 ">
   <CardHeader>
     <CardTitle>Add Spare Part</CardTitle>
   </CardHeader>
 
-  <CardContent className="space-y-2 space-x-9">
+  <CardContent className="space-y-2 space-x-9 text-black">
     <select
       value={selectedPart ?? ""}
       onChange={(e) =>
@@ -346,13 +369,47 @@ const generateInvoice = async () => {
   </CardContent>
 </Card>
 
+{/* ================= TAX & DISCOUNT ================= */}
+<Card className="text-white dark:text-gray-100">
+  <CardHeader>
+    <CardTitle>Invoice Adjustments</CardTitle>
+  </CardHeader>
+
+  <CardContent className="space-y-3 space-x-9 text-black">
+    
+    <input
+  type="number"
+  placeholder="Tax (%)"
+  value={tax}
+  onChange={(e) => setTax(e.target.value)}
+  min="0"
+/>
+
+<input
+  type="number"
+  placeholder="Discount (%)"
+  value={discount}
+  onChange={(e) => setDiscount(e.target.value)}
+  min="0"
+/>
+
+
+    <div className="text-sm text-muted-foreground">
+  Subtotal: ₹{subtotal.toFixed(2)} <br />
+  Tax ({tax || 0}%): ₹{taxAmount.toFixed(2)} <br />
+  Discount ({discount || 0}%): ₹{discountAmount.toFixed(2)} <br />
+  <strong>Final Total: ₹{finalTotal.toFixed(2)}</strong>
+</div>
+
+  </CardContent>
+</Card>
 
 {/* ================= Update Status / Generate Invoice ================= */}
-<Card className="text-gray-900 dark:text-gray-100">
+<Card className="text-white dark:text-gray-100">
   <CardHeader>
     <CardTitle>Update Job Status</CardTitle>
   </CardHeader>
-  <CardContent className="space-y-2 space-x-9">
+  <CardContent className="space-y-2 space-x-9 text-black">
     <select
   value={job.status}
   onChange={(e) => updateStatus(e.target.value)}
@@ -361,6 +418,7 @@ const generateInvoice = async () => {
   <option value="open">Open</option>
   <option value="in_progress">In Progress</option>
   <option value="completed">Completed</option>
+
 </select>
     {job.status === "completed" && (
       <Button onClick={generateInvoice}>Generate Invoice</Button>

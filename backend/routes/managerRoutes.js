@@ -15,7 +15,6 @@ import {
   getPendingMechanicRequests ,
   getDashboardStats ,
   getInventory,
-  upsertInventory,
   getLowStockInventory,
   addOrUpdatePart,
   getInventoryLogs,
@@ -110,7 +109,7 @@ router.get(
 
 /**
  * Approve mechanic request
- */
+ */ 
 router.post(
   "/mechanics/requests/:id/approve",
   authenticateUser,
@@ -137,7 +136,7 @@ router.get(
 router.get("/inventory/logs", authenticateUser, managerOnly, getInventoryLogs);
 router.get("/inventory/low-stock", authenticateUser, managerOnly, getLowStockInventory);
 router.get("/inventory", authenticateUser, managerOnly, getInventory);
-router.post("/inventory", authenticateUser, managerOnly, upsertInventory);
+
 router.get(
   "/parts",
   authenticateUser,
@@ -151,7 +150,7 @@ router.post(
   managerOnly,
   addJobTask
 );
-
+  
 /**
  * 2️⃣ Add Spare Part Usage to Job Card
  * POST /api/manager/job-cards/:job_card_id/parts
@@ -180,9 +179,12 @@ router.patch(
  */
 router.post(
   "/job-cards/:id/invoice",
-  authenticateUser,
+  authenticateUser, 
   managerOnly,
   generateInvoice
 );
+
+router.post("/inventory", authenticateUser, managerOnly, addOrUpdatePart);
+
 
 export default router;

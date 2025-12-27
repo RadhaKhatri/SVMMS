@@ -26,7 +26,7 @@ const MostUsedParts = () => {
                 Category: {p.category}
               </div>
             </div>
-
+ 
             <div className="text-right">
               <div>Used: {p.total_quantity_used}</div>
               <div className="font-semibold text-primary">

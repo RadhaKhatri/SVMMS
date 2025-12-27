@@ -597,82 +597,7 @@ export const getInventory = async (req, res) => {
     console.error("Inventory fetch error:", err);
     res.status(500).json({ message: "Failed to fetch inventory" });
   }
-};
-
-export const upsertInventory = async (req, res) => {
-  const { part_id, quantity, reorder_level, location } = req.body;
-
-  try {
-    if (!part_id || quantity == null) {
-      return res.status(400).json({ message: "part_id and quantity required" });
-    }
-
-    // 🔍 Ensure part exists
-    const partCheck = await pool.query(
-      `SELECT id FROM parts WHERE id = $1`,
-      [part_id]
-    );
-
-    if (partCheck.rows.length === 0) {
-      return res.status(400).json({
-        message: "Invalid part selected",
-      });
-    }
-
-    const sc = await pool.query(
-      `SELECT id FROM service_centers WHERE manager_id = $1`,
-      [req.user.id]
-    );
-
-    if (sc.rows.length === 0) {
-      return res.status(400).json({ message: "Service center not found" });
-    }
-
-    await pool.query(
-      `
-      INSERT INTO inventory
-        (service_center_id, part_id, quantity, reorder_level, location)
-      VALUES ($1,$2,$3,$4,$5)
-      ON CONFLICT (service_center_id, part_id)
-      DO UPDATE SET
-        quantity = EXCLUDED.quantity,
-        reorder_level = EXCLUDED.reorder_level,
-        location = EXCLUDED.location,
-        updated_at = NOW()
-      `,
-      [
-        sc.rows[0].id,
-        part_id,
-        quantity,
-        reorder_level || 0,
-        location || null,
-      ]
-    );
-
-    res.json({ message: "Inventory saved successfully" });
-  } catch (err) {
-
-    // 1️⃣ Missing fields
-if (!part_id || quantity == null) {
-  return res.status(400).json({ message: "part_id and quantity required" });
-}
-
-// 2️⃣ Invalid part
-if (partCheck.rows.length === 0) {
-  return res.status(400).json({ message: "Invalid part selected" });
-}
-
-// 3️⃣ No service center
-if (sc.rows.length === 0) {
-  return res.status(400).json({ message: "Service center not found" });
-}
-console.error("Save failed:", err.response?.data);
-  alert(err.response?.data?.message || "Failed to save inventory");
-    console.error("Inventory save error:", err);
-    res.status(500).json({ message: "Failed to save inventory" });
-  }
-};
-
+};  
 
 export const getLowStockInventory = async (req, res) => {
   try {
@@ -707,47 +632,79 @@ export const addOrUpdatePart = async (req, res) => {
     unit_price,
     quantity,
     reorder_level,
-    location
+    location,
   } = req.body;
+
+  // quantity always required
+if (quantity == null) {
+  return res.status(400).json({ message: "Quantity is required" });
+}
+// new part validation
+if (!part_id && (!name || !unit_price)) {
+  return res.status(400).json({
+    message: "Part name and unit price are required for new part",
+  });
+}
+
 
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
+    // 1️⃣ Get manager's service center
+    const scRes = await client.query(
+      `SELECT id FROM service_centers WHERE manager_id = $1`,
+      [req.user.id]
+    );
+
+    if (!scRes.rows.length) {
+      throw new Error("Service center not found");
+    }
+
+    const serviceCenterId = scRes.rows[0].id;
     let finalPartId = part_id;
 
-    // 1️⃣ Insert or update PART
+    // 2️⃣ Create or update PART (GLOBAL)
     if (!part_id) {
+      // 🔹 New part created by manager
       const partRes = await client.query(
         `
         INSERT INTO parts (part_code, name, category, unit_price)
         VALUES ($1,$2,$3,$4)
         RETURNING id
         `,
-        [part_code, name, category, unit_price]
+        [
+          part_code || `P-${Date.now()}`,
+          name,
+          category || null,
+          unit_price,
+        ]
       );
+
       finalPartId = partRes.rows[0].id;
     } else {
+      // 🔹 Update existing part price/details
       await client.query(
         `
         UPDATE parts
-        SET name=$1, category=$2, unit_price=$3
-        WHERE id=$4
+SET
+  name = COALESCE($1, name),
+  category = COALESCE($2, category),
+  unit_price = COALESCE($3, unit_price)
+WHERE id = $4
+
         `,
         [name, category, unit_price, part_id]
       );
     }
 
-    // 2️⃣ Upsert INVENTORY
+    // 3️⃣ UPSERT INVENTORY (SERVICE CENTER SPECIFIC)
     await client.query(
       `
       INSERT INTO inventory
-      (service_center_id, part_id, quantity, reorder_level, location)
-      VALUES (
-        (SELECT id FROM service_centers WHERE manager_id=$1),
-        $2,$3,$4,$5
-      )
+        (service_center_id, part_id, quantity, reorder_level, location)
+      VALUES ($1,$2,$3,$4,$5)
       ON CONFLICT (service_center_id, part_id)
       DO UPDATE SET
         quantity = EXCLUDED.quantity,
@@ -755,20 +712,30 @@ export const addOrUpdatePart = async (req, res) => {
         location = EXCLUDED.location,
         updated_at = NOW()
       `,
-      [req.user.id, finalPartId, quantity, reorder_level, location]
+      [
+        serviceCenterId,
+        finalPartId,
+        quantity,
+        reorder_level || 0,
+        location || null,
+      ]
     );
 
     await client.query("COMMIT");
-    res.json({ message: "Part saved successfully" });
 
+    res.json({
+      message: "Part and inventory saved successfully",
+      part_id: finalPartId,
+    });
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error(err);
+    console.error("Add/Update part error:", err);
     res.status(500).json({ message: "Failed to save part" });
   } finally {
     client.release();
   }
 };
+
 
 export const getInventoryLogs = async (req, res) => {
   const result = await pool.query(
@@ -943,7 +910,7 @@ export const addJobPart = async (req, res) => {
     res.status(500).json({ message: "Failed to add job part" });
   } finally {
     client.release();
-  }
+  }   
 };
 
 
@@ -977,19 +944,15 @@ export const updateJobCardStatus = async (req, res) => {
 export const generateInvoice = async (req, res) => {
   try {
     const jobCardId = req.params.id;
-    const { tax = 0, discount = 0 } = req.body;
+    const { tax_percent = 0, discount_percent = 0 } = req.body;
 
-    const mechRes = await pool.query(
-  `
-  SELECT assigned_mechanic
-  FROM job_cards
-  WHERE id = $1
-  `,
-  [jobCardId]
-);
+    if (tax_percent < 0 || discount_percent < 0) {
+      return res.status(400).json({
+        message: "Tax and discount percentages must be non-negative",
+      });
+    }
 
-const mechanicId = mechRes.rows[0]?.assigned_mechanic;
-
+    // 1️⃣ Get job totals
     const jobRes = await pool.query(
       `
       SELECT total_parts_cost, total_labor_cost
@@ -999,7 +962,7 @@ const mechanicId = mechRes.rows[0]?.assigned_mechanic;
       [jobCardId]
     );
 
-    if (jobRes.rows.length === 0) {
+    if (!jobRes.rows.length) {
       return res.status(404).json({ message: "Job card not found" });
     }
 
@@ -1008,11 +971,21 @@ const mechanicId = mechRes.rows[0]?.assigned_mechanic;
     const subtotal =
       Number(total_parts_cost || 0) + Number(total_labor_cost || 0);
 
-    const total_amount =
-      subtotal + Number(tax || 0) - Number(discount || 0);
+    // 2️⃣ Convert % → amount
+    const tax = (subtotal * Number(tax_percent)) / 100;
+    const discount = (subtotal * Number(discount_percent)) / 100;
+
+    const total_amount = subtotal + tax - discount;
+
+    if (total_amount < 0) {
+      return res.status(400).json({
+        message: "Total amount cannot be negative",
+      });
+    }
 
     const invoice_number = `INV-${Date.now()}`;
 
+    // 3️⃣ Store AMOUNT (not %)
     await pool.query(
       `
       INSERT INTO invoices
@@ -1024,13 +997,13 @@ const mechanicId = mechRes.rows[0]?.assigned_mechanic;
         invoice_number,
         total_parts_cost,
         total_labor_cost,
-        tax,
-        discount,
-        total_amount,
+        tax.toFixed(2),
+        discount.toFixed(2),
+        total_amount.toFixed(2),
       ]
     );
 
-    // Mark job as completed
+    // 4️⃣ Update job card
     await pool.query(
       `
       UPDATE job_cards
@@ -1043,21 +1016,14 @@ const mechanicId = mechRes.rows[0]?.assigned_mechanic;
 
     res.json({
       invoice_number,
+      subtotal,
+      tax_percent,
+      discount_percent,
+      tax,
+      discount,
       total_amount,
     });
 
-// 🔁 Free mechanic
-if (mechanicId) {
-  await pool.query(
-    `
-    UPDATE mechanic_profiles
-    SET availability_status = 'available',
-        updated_at = NOW()
-    WHERE user_id = $1
-    `,
-    [mechanicId]
-  );
-}
   } catch (err) {
     console.error("Generate invoice error:", err);
     res.status(500).json({ message: "Failed to generate invoice" });

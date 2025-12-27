@@ -24,7 +24,7 @@ const ServiceCenterReport = () => {
     from: firstDay,
     to: today,
     city: ""
-  });
+  }); 
 
   const loadData = () => {
     axios
