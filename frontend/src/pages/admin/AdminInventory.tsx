@@ -1,8 +1,8 @@
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MostUsedParts from "./MostUsedParts";
 import PartsCatalog from "./PartsCatalog";
 import UsageLogs from "./UsageLogs";
-import MostUsedParts from "./MostUsedParts"; 
 
 const AdminInventory = () => {
   return (

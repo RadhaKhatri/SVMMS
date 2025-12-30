@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const MechanicJobCards = () => {
@@ -17,8 +17,8 @@ const MechanicJobCards = () => {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       })
-      .then(res => setJobCards(res.data))
-      .catch(err => console.error(err));
+      .then((res) => setJobCards(res.data))
+      .catch((err) => console.error(err));
   }, []);
 
   return (
@@ -37,8 +37,12 @@ const MechanicJobCards = () => {
 
             <CardContent className="flex justify-between items-center">
               <div className="text-sm space-y-1">
-                <div><b>Customer:</b> {jc.customer_name}</div>
-                <div><b>Vehicle:</b> {jc.vehicle}</div>
+                <div>
+                  <b>Customer:</b> {jc.customer_name}
+                </div>
+                <div>
+                  <b>Vehicle:</b> {jc.vehicle}
+                </div>
               </div>
 
               <Button

@@ -1,14 +1,14 @@
 import express from "express";
-import { authenticateUser } from "../middleware/authMiddleware.js";
 import {
-  getVehicles,
   addVehicle,
-  updateVehicle,
   deleteVehicle,
+  getMyVehicles,
   getVehicleById,
+  getVehicles,
   getVehicleServices,
-  getMyVehicles 
+  updateVehicle,
 } from "../controllers/vehicleController.js";
+import { authenticateUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 

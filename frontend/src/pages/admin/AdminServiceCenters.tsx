@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { useEffect, useState } from "react";
 import axios from "axios";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const AdminServiceCenters = () => {
@@ -11,18 +11,22 @@ const AdminServiceCenters = () => {
   useEffect(() => {
     const fetchCenters = async () => {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/admin/service_centers", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        "http://localhost:5000/api/admin/service_centers",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setCenters(res.data);
     };
     fetchCenters();
   }, []);
 
-  const filteredCenters = centers.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.city.toLowerCase().includes(search.toLowerCase()) ||
-    c.manager_name?.toLowerCase().includes(search.toLowerCase())
+  const filteredCenters = centers.filter(
+    (c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.city.toLowerCase().includes(search.toLowerCase()) ||
+      c.manager_name?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -52,7 +56,9 @@ const AdminServiceCenters = () => {
               </div>
             </div>
           ))}
-          {filteredCenters.length === 0 && <p className="text-muted-foreground">No service centers found</p>}
+          {filteredCenters.length === 0 && (
+            <p className="text-muted-foreground">No service centers found</p>
+          )}
         </div>
       </div>
     </DashboardLayout>

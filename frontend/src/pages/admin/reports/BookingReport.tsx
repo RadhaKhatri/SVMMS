@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 interface ServiceBooking {
   service_name: string;
@@ -24,23 +24,25 @@ const BookingReport = () => {
     service_center_id: "",
     service_id: "",
     from: "",
-    to: today
+    to: today,
   });
 
   const loadData = async () => {
     setLoading(true);
-    const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+    const headers = {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    };
 
     try {
       const [serviceRes, statusRes] = await Promise.all([
         axios.get("http://localhost:5000/api/admin/reports/bookings/services", {
           headers,
-          params: filters
+          params: filters,
         }),
         axios.get("http://localhost:5000/api/admin/reports/bookings/status", {
           headers,
-          params: filters
-        })
+          params: filters,
+        }),
       ]);
 
       setByService(serviceRes.data);
@@ -58,7 +60,6 @@ const BookingReport = () => {
 
   return (
     <div className="space-y-6">
-
       {/* Filters */}
       <Card className="p-4 space-y-3">
         <h2 className="text-lg font-semibold">Booking Reports</h2>
@@ -66,27 +67,33 @@ const BookingReport = () => {
           <Input
             placeholder="Service Center ID"
             value={filters.service_center_id}
-            onChange={e => setFilters({ ...filters, service_center_id: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, service_center_id: e.target.value })
+            }
           />
           <Input
             placeholder="Service ID"
             value={filters.service_id}
-            onChange={e => setFilters({ ...filters, service_id: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, service_id: e.target.value })
+            }
           />
           <Input
             type="date"
             placeholder="From"
             value={filters.from}
-            onChange={e => setFilters({ ...filters, from: e.target.value })}
+            onChange={(e) => setFilters({ ...filters, from: e.target.value })}
           />
           <Input
             type="date"
             placeholder="To"
             value={filters.to}
-            onChange={e => setFilters({ ...filters, to: e.target.value })}
+            onChange={(e) => setFilters({ ...filters, to: e.target.value })}
           />
         </div>
-        <Button className="mt-2" onClick={loadData}>Apply Filters</Button>
+        <Button className="mt-2" onClick={loadData}>
+          Apply Filters
+        </Button>
       </Card>
 
       {/* Booking by Service */}
@@ -126,7 +133,6 @@ const BookingReport = () => {
           </div>
         )}
       </div>
-
     </div>
   );
 };

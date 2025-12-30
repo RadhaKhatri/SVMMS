@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 const LocationReport = () => {
   const today = new Date().toISOString().split("T")[0];
@@ -34,7 +34,6 @@ const LocationReport = () => {
 
   return (
     <div className="space-y-4">
-
       {/* Filters */}
       <Card className="p-4 space-y-3">
         <h2 className="text-lg font-semibold">City-wise Revenue Report</h2>
@@ -43,16 +42,18 @@ const LocationReport = () => {
             type="date"
             placeholder="From"
             value={filters.from}
-            onChange={e => setFilters({ ...filters, from: e.target.value })}
+            onChange={(e) => setFilters({ ...filters, from: e.target.value })}
           />
           <Input
             type="date"
             placeholder="To"
             value={filters.to}
-            onChange={e => setFilters({ ...filters, to: e.target.value })}
+            onChange={(e) => setFilters({ ...filters, to: e.target.value })}
           />
         </div>
-        <Button className="mt-2" onClick={loadData}>Apply Filters</Button>
+        <Button className="mt-2" onClick={loadData}>
+          Apply Filters
+        </Button>
       </Card>
 
       {/* Report */}

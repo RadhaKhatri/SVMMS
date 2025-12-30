@@ -155,14 +155,14 @@ export const approveBooking = async (req, res) => {
         booking.service_center_id,
         booking.vehicle_id,
         booking.customer_id,
-        mechanic_id || null
+        mechanic_id || null,
       ]
     );
 
-   // ✅ ADD THIS HERE
-if (mechanic_id) {
-  await client.query(
-  `
+    // ✅ ADD THIS HERE
+    if (mechanic_id) {
+      await client.query(
+        `
   INSERT INTO mechanic_profiles (user_id, availability_status)
   VALUES ($1, 'busy')
   ON CONFLICT (user_id)
@@ -170,9 +170,9 @@ if (mechanic_id) {
     availability_status = 'busy',
     updated_at = NOW()
   `,
-  [mechanic_id]
-);
-}
+        [mechanic_id]
+      );
+    }
 
     await client.query("COMMIT");
 
@@ -250,7 +250,6 @@ GROUP BY u.id, mp.hourly_rate, mp.availability_status
     res.status(500).json({ message: "Failed to fetch mechanics" });
   }
 };
-
 
 /* ============================
    GET MANAGER PROFILE
@@ -348,7 +347,7 @@ export const updateManagerProfile = async (req, res) => {
     console.error("Update profile error:", error);
     res.status(500).json({ message: "Failed to update profile" });
   }
-};  
+};
 
 export const getJobCardsList = async (req, res) => {
   try {
@@ -498,7 +497,6 @@ export const getJobCardDetail = async (req, res) => {
   }
 };
 
-
 export const getPendingMechanicRequests = async (req, res) => {
   const managerId = req.user.id;
 
@@ -514,7 +512,6 @@ export const getPendingMechanicRequests = async (req, res) => {
 
   res.json(result.rows);
 };
-
 
 export const approveMechanic = async (req, res) => {
   await pool.query(
@@ -598,7 +595,7 @@ export const getInventory = async (req, res) => {
     console.error("Inventory fetch error:", err);
     res.status(500).json({ message: "Failed to fetch inventory" });
   }
-};  
+};
 
 export const getLowStockInventory = async (req, res) => {
   try {
@@ -637,16 +634,15 @@ export const addOrUpdatePart = async (req, res) => {
   } = req.body;
 
   // quantity always required
-if (quantity == null) {
-  return res.status(400).json({ message: "Quantity is required" });
-}
-// new part validation
-if (!part_id && (!name || !unit_price)) {
-  return res.status(400).json({
-    message: "Part name and unit price are required for new part",
-  });
-}
-
+  if (quantity == null) {
+    return res.status(400).json({ message: "Quantity is required" });
+  }
+  // new part validation
+  if (!part_id && (!name || !unit_price)) {
+    return res.status(400).json({
+      message: "Part name and unit price are required for new part",
+    });
+  }
 
   const client = await pool.connect();
 
@@ -675,12 +671,7 @@ if (!part_id && (!name || !unit_price)) {
         VALUES ($1,$2,$3,$4)
         RETURNING id
         `,
-        [
-          part_code || `P-${Date.now()}`,
-          name,
-          category || null,
-          unit_price,
-        ]
+        [part_code || `P-${Date.now()}`, name, category || null, unit_price]
       );
 
       finalPartId = partRes.rows[0].id;
@@ -736,7 +727,6 @@ WHERE id = $4
     client.release();
   }
 };
-
 
 export const getInventoryLogs = async (req, res) => {
   const result = await pool.query(
@@ -853,7 +843,9 @@ export const addJobPart = async (req, res) => {
 
     if (invRes.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ message: "Part not available in inventory" });
+      return res
+        .status(404)
+        .json({ message: "Part not available in inventory" });
     }
 
     const { available_qty, unit_price } = invRes.rows[0];
@@ -904,16 +896,14 @@ export const addJobPart = async (req, res) => {
       message: "Part added successfully",
       total_price: totalPrice,
     });
-
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Add job part error:", err);
     res.status(500).json({ message: "Failed to add job part" });
   } finally {
     client.release();
-  }   
+  }
 };
-
 
 export const updateJobCardStatus = async (req, res) => {
   const client = await pool.connect();
@@ -961,7 +951,6 @@ export const updateJobCardStatus = async (req, res) => {
     client.release();
   }
 };
-
 
 export const generateInvoice = async (req, res) => {
   try {
@@ -1026,35 +1015,35 @@ export const generateInvoice = async (req, res) => {
     );
 
     // 4️⃣ Update job card
-   const updateRes = await pool.query(
-  `
+    const updateRes = await pool.query(
+      `
   UPDATE job_cards
   SET status = 'completed',
       updated_at = NOW()
   WHERE id = $1
   RETURNING booking_id, customer_id
   `,
-  [jobCardId]
-);
+      [jobCardId]
+    );
 
-const { booking_id, customer_id } = updateRes.rows[0];
+    const { booking_id, customer_id } = updateRes.rows[0];
 
     // 5️⃣ Sync booking
-await pool.query(
-  `
+    await pool.query(
+      `
   UPDATE service_bookings
   SET status = 'completed',
       updated_at = NOW()
   WHERE id = $1
   `,
-  [booking_id]
-);
+      [booking_id]
+    );
 
-// 6️⃣ 🔴 SOCKET UPDATE
-io.to(`customer_${customer_id}`).emit("booking-status-updated", {
-  bookingId: booking_id,
-  status: "completed",
-});
+    // 6️⃣ 🔴 SOCKET UPDATE
+    io.to(`customer_${customer_id}`).emit("booking-status-updated", {
+      bookingId: booking_id,
+      status: "completed",
+    });
 
     res.json({
       invoice_number,
@@ -1065,7 +1054,6 @@ io.to(`customer_${customer_id}`).emit("booking-status-updated", {
       discount,
       total_amount,
     });
-
   } catch (err) {
     console.error("Generate invoice error:", err);
     res.status(500).json({ message: "Failed to generate invoice" });

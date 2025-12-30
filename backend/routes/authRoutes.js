@@ -1,14 +1,23 @@
 import express from "express";
-import { registerUser, loginUser,resetPassword, forgotPassword } from "../controllers/authController.js";
+import {
+  forgotPassword,
+  loginUser,
+  registerUser,
+  resetPassword,
+} from "../controllers/authController.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.post("/register", registerUser);
-router.post("/login", (req, res, next) => {
-  console.log("➡️ login route hit");
-  next();
-}, loginUser);
+router.post(
+  "/login",
+  (req, res, next) => {
+    console.log("➡️ login route hit");
+    next();
+  },
+  loginUser
+);
 
 router.get("/me", authenticateUser, (req, res) => {
   console.log("🔥 /api/auth/me HIT");
@@ -17,7 +26,5 @@ router.get("/me", authenticateUser, (req, res) => {
 
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
-
-
 
 export default router; // ✅ make sure "export default" is used

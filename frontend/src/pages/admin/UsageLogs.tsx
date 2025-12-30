@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
 import { Card } from "@/components/ui/card";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 const UsageLogs = () => {
   const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/admin/inventory/usage-logs", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    }).then(res => setLogs(res.data));
+    axios
+      .get("http://localhost:5000/api/admin/inventory/usage-logs", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      })
+      .then((res) => setLogs(res.data));
   }, []);
 
   return (

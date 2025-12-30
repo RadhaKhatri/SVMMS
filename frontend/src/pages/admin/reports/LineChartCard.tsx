@@ -1,5 +1,12 @@
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Card } from "@/components/ui/card";
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const LineChartCard = ({ data, xKey, yKey, title }: any) => (
   <Card className="p-4">
@@ -9,7 +16,7 @@ const LineChartCard = ({ data, xKey, yKey, title }: any) => (
         <XAxis dataKey={xKey} />
         <YAxis />
         <Tooltip />
-        <Line dataKey={yKey} /> 
+        <Line dataKey={yKey} />
       </LineChart>
     </ResponsiveContainer>
   </Card>

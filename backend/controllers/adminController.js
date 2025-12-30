@@ -68,7 +68,7 @@ export const getAdminDashboardData = async (req, res) => {
     /* ================================
        7️⃣ TOP PERFORMING MECHANICS
     ================================ */
-  const topMechanicsResult = await pool.query(`
+    const topMechanicsResult = await pool.query(`
   SELECT 
     u.name,
     COUNT(jc.id)::int AS completed,
@@ -77,7 +77,7 @@ export const getAdminDashboardData = async (req, res) => {
   JOIN users u ON u.id = jc.assigned_mechanic
   WHERE jc.status = 'completed'
   GROUP BY u.name
-  ORDER BY completed DESC
+  ORDER BY completed DESC 
   LIMIT 3
 `);
 
@@ -135,7 +135,6 @@ export const getAllServiceCenters = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 export const getCustomerFullDetails = async (req, res) => {
   try {
@@ -213,13 +212,11 @@ export const getCustomerFullDetails = async (req, res) => {
       vehicles: vehiclesResult.rows,
       jobCards: jobCardsResult.rows,
     });
-
   } catch (error) {
     console.error("Admin customer details error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 /* ================================
    Get Full Details of a Service Center
@@ -229,13 +226,16 @@ export const getServiceCenterDetails = async (req, res) => {
     const { id } = req.params;
 
     // 1️⃣ Service Center Basic Info
-    const scResult = await pool.query(`
+    const scResult = await pool.query(
+      `
       SELECT sc.id, sc.name, sc.address, sc.city, sc.contact_number,
              u.name AS manager_name
       FROM service_centers sc
       LEFT JOIN users u ON u.id = sc.manager_id
       WHERE sc.id = $1
-    `, [id]);
+    `,
+      [id]
+    );
 
     if (scResult.rows.length === 0) {
       return res.status(404).json({ message: "Service Center not found" });
@@ -243,15 +243,19 @@ export const getServiceCenterDetails = async (req, res) => {
     const serviceCenter = scResult.rows[0];
 
     // 2️⃣ Assigned Mechanics
-    const mechanicsResult = await pool.query(`
+    const mechanicsResult = await pool.query(
+      `
       SELECT u.id, u.name, u.email, u.phone, scm.status
       FROM service_center_mechanics scm
       JOIN users u ON u.id = scm.mechanic_id
       WHERE scm.service_center_id = $1
-    `, [id]);
+    `,
+      [id]
+    );
 
     // 3️⃣ Job Cards with vehicle, customer, mechanic, invoice info
-    const jobCardsResult = await pool.query(`
+    const jobCardsResult = await pool.query(
+      `
       SELECT 
         jc.id, jc.status, jc.created_at, jc.total_labor_cost, jc.total_parts_cost,
         v.make, v.model, v.year, v.vin,
@@ -265,15 +269,20 @@ export const getServiceCenterDetails = async (req, res) => {
       LEFT JOIN invoices inv ON inv.job_card_id = jc.id
       WHERE jc.service_center_id = $1
       ORDER BY jc.created_at DESC
-    `, [id]);
+    `,
+      [id]
+    );
 
     // 4️⃣ Inventory of the Service Center
-    const inventoryResult = await pool.query(`
+    const inventoryResult = await pool.query(
+      `
       SELECT p.id AS part_id, p.name AS part_name, p.unit_price, i.quantity, i.reorder_level, i.location
       FROM inventory i
       JOIN parts p ON p.id = i.part_id
       WHERE i.service_center_id = $1
-    `, [id]);
+    `,
+      [id]
+    );
 
     res.json({
       serviceCenter,
@@ -281,7 +290,6 @@ export const getServiceCenterDetails = async (req, res) => {
       jobCards: jobCardsResult.rows,
       inventory: inventoryResult.rows,
     });
-
   } catch (error) {
     console.error("Admin service center details error:", error);
     res.status(500).json({ message: "Server error" });
@@ -307,9 +315,9 @@ export const createPart = async (req, res) => {
     category,
     unit_price,
     service_center_id, // ✅ NEW (optional)
-    quantity,          // ✅ NEW (optional)
+    quantity, // ✅ NEW (optional)
     reorder_level,
-    location
+    location,
   } = req.body;
 
   const client = await pool.connect();
@@ -367,9 +375,9 @@ export const updatePart = async (req, res) => {
     category,
     unit_price,
     service_center_id, // optional
-    quantity,          // optional
+    quantity, // optional
     reorder_level,
-    location
+    location,
   } = req.body;
 
   const client = await pool.connect();
@@ -397,13 +405,7 @@ export const updatePart = async (req, res) => {
           quantity = inventory.quantity + EXCLUDED.quantity,
           updated_at = NOW()
         `,
-        [
-          service_center_id,
-          id,
-          quantity,
-          reorder_level || 0,
-          location || null,
-        ]
+        [service_center_id, id, quantity, reorder_level || 0, location || null]
       );
     }
 

@@ -1,8 +1,6 @@
-import pool from "../db.js";
-import PDFDocument from "pdfkit";
-import fs from "fs";
-import path from "path";
 import nodemailer from "nodemailer";
+import PDFDocument from "pdfkit";
+import pool from "../db.js";
 
 /* ===============================
    EMAIL TRANSPORTER (SHARED)
@@ -232,7 +230,6 @@ export const getInvoiceById = async (req, res) => {
   }
 };
 
-
 export const downloadInvoicePDF = async (req, res) => {
   const { id } = req.params;
 
@@ -308,10 +305,7 @@ export const downloadInvoicePDF = async (req, res) => {
     doc.pipe(res);
 
     /* ================= HEADER ================= */
-    doc
-      .fontSize(22)
-      .fillColor("#0f172a")
-      .text("SVMMS PRO", 40, 40);
+    doc.fontSize(22).fillColor("#0f172a").text("SVMMS PRO", 40, 40);
 
     doc
       .fontSize(10)
@@ -327,12 +321,9 @@ export const downloadInvoicePDF = async (req, res) => {
     doc
       .fontSize(10)
       .text(`Invoice #: ${inv.invoice_number}`, 400, 65, { align: "right" })
-      .text(
-        `Date: ${new Date(inv.issued_at).toLocaleDateString()}`,
-        400,
-        80,
-        { align: "right" }
-      )
+      .text(`Date: ${new Date(inv.issued_at).toLocaleDateString()}`, 400, 80, {
+        align: "right",
+      })
       .text(`Status: ${inv.status.toUpperCase()}`, 400, 95, {
         align: "right",
       });
@@ -352,15 +343,16 @@ export const downloadInvoicePDF = async (req, res) => {
     doc.fontSize(10).fillColor("#334155");
     doc.text(`${inv.make} ${inv.model} (${inv.year})`, 320, y + 15);
     doc.text(`VIN: ${inv.vin}`, 320, y + 30);
-    doc.text(`Service: ${inv.services.length ? inv.services.join(", ") : "—"}`, 320, y + 45);
+    doc.text(
+      `Service: ${inv.services.length ? inv.services.join(", ") : "—"}`,
+      320,
+      y + 45
+    );
 
     /* ================= TABLE HEADER ================= */
     y = 220;
 
-    doc
-      .rect(40, y, 515, 25)
-      .fill("#f1f5f9")
-      .stroke();
+    doc.rect(40, y, 515, 25).fill("#f1f5f9").stroke();
 
     doc.fillColor("#020617").fontSize(11);
     doc.text("Description", 50, y + 7);
@@ -373,7 +365,11 @@ export const downloadInvoicePDF = async (req, res) => {
       doc.fillColor("#020617").fontSize(10);
       doc.text(label, 50, y);
       doc.text(`Rs ${num(value).toFixed(2)}`, 450, y, { align: "right" });
-      doc.moveTo(40, y + 18).lineTo(555, y + 18).strokeColor("#e2e8f0").stroke();
+      doc
+        .moveTo(40, y + 18)
+        .lineTo(555, y + 18)
+        .strokeColor("#e2e8f0")
+        .stroke();
     };
 
     row("Labor Charges", inv.labor_total);
@@ -383,10 +379,7 @@ export const downloadInvoicePDF = async (req, res) => {
     row("Discount", inv.discount);
 
     y += 30;
-    doc
-      .rect(40, y, 515, 30)
-      .fill("#e0f2fe")
-      .stroke();
+    doc.rect(40, y, 515, 30).fill("#e0f2fe").stroke();
 
     doc.font("Helvetica-Bold").fontSize(12).fillColor("#0c4a6e");
     doc.text("TOTAL AMOUNT", 50, y + 8);
@@ -406,7 +399,6 @@ export const downloadInvoicePDF = async (req, res) => {
       );
 
     doc.end();
-
   } catch (err) {
     console.error("INVOICE PDF ERROR:", err);
     if (!res.headersSent) {
@@ -414,7 +406,6 @@ export const downloadInvoicePDF = async (req, res) => {
     }
   }
 };
-
 
 /* =========================================
    GENERATE INVOICE PDF (BUFFER – CLEAN)
@@ -481,10 +472,7 @@ const generateInvoicePDF = async (invoiceId, customerId) => {
   const money = (v) => `Rs ${Number(v || 0).toFixed(2)}`;
 
   /* ================= HEADER ================= */
-  doc
-    .fontSize(22)
-    .fillColor("#0f172a")
-    .text("SVMMS PRO", 40, 40);
+  doc.fontSize(22).fillColor("#0f172a").text("SVMMS PRO", 40, 40);
 
   doc
     .fontSize(10)
@@ -500,12 +488,9 @@ const generateInvoicePDF = async (invoiceId, customerId) => {
   doc
     .fontSize(10)
     .text(`Invoice #: ${inv.invoice_number}`, 400, 65, { align: "right" })
-    .text(
-      `Date: ${new Date(inv.issued_at).toLocaleDateString()}`,
-      400,
-      80,
-      { align: "right" }
-    )
+    .text(`Date: ${new Date(inv.issued_at).toLocaleDateString()}`, 400, 80, {
+      align: "right",
+    })
     .text(`Status: ${inv.status.toUpperCase()}`, 400, 95, {
       align: "right",
     });
@@ -585,7 +570,6 @@ const generateInvoicePDF = async (invoiceId, customerId) => {
   });
 };
 
-
 export const sendInvoiceByEmail = async (req, res) => {
   const { id } = req.params;
   const { email } = req.body;
@@ -637,7 +621,6 @@ export const sendInvoiceByEmail = async (req, res) => {
     });
 
     res.json({ message: "Invoice sent successfully" });
-
   } catch (err) {
     console.error("Invoice email error:", err);
     res.status(500).json({ message: "Failed to send invoice email" });

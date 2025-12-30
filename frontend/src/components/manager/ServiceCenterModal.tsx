@@ -1,14 +1,14 @@
 // src/components/manager/ServiceCenterModal.tsx
-import { useState } from "react";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import axios from "axios";
+import { useState } from "react";
 
 type Props = {
   open: boolean;
@@ -16,8 +16,7 @@ type Props = {
   onClose: () => void;
 };
 
-
-const ServiceCenterModal = ({ open,onClose, onSuccess }: Props) => {
+const ServiceCenterModal = ({ open, onClose, onSuccess }: Props) => {
   const [form, setForm] = useState({
     name: "",
     address: "",
@@ -26,15 +25,11 @@ const ServiceCenterModal = ({ open,onClose, onSuccess }: Props) => {
   });
 
   const submit = async () => {
-    await axios.post(
-      "http://localhost:5000/api/manager/service-center",
-      form,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
+    await axios.post("http://localhost:5000/api/manager/service-center", form, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
 
     onSuccess();
   };
@@ -67,9 +62,7 @@ const ServiceCenterModal = ({ open,onClose, onSuccess }: Props) => {
         <Input
           placeholder="Contact Number"
           value={form.contact_number}
-          onChange={(e) =>
-            setForm({ ...form, contact_number: e.target.value })
-          }
+          onChange={(e) => setForm({ ...form, contact_number: e.target.value })}
         />
 
         <Button className="w-full mt-4" onClick={submit}>

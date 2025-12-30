@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 interface InventoryRow {
   service_center: string;
@@ -21,7 +21,7 @@ const PartsInventoryReport = () => {
     service_center_id: "",
     category: "",
     from: "",
-    to: today
+    to: today,
   });
 
   const loadData = async () => {
@@ -31,7 +31,7 @@ const PartsInventoryReport = () => {
         "http://localhost:5000/api/admin/reports/inventory",
         {
           params: filters,
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
       setRows(res.data);
@@ -48,7 +48,6 @@ const PartsInventoryReport = () => {
 
   return (
     <div className="space-y-4">
-
       {/* Filters */}
       <Card className="p-4 space-y-4">
         <h2 className="text-lg font-semibold">Parts Inventory Report</h2>
@@ -56,29 +55,33 @@ const PartsInventoryReport = () => {
           <Input
             placeholder="Service Center ID"
             value={filters.service_center_id}
-            onChange={e =>
+            onChange={(e) =>
               setFilters({ ...filters, service_center_id: e.target.value })
             }
           />
           <Input
             placeholder="Part Category"
             value={filters.category}
-            onChange={e => setFilters({ ...filters, category: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, category: e.target.value })
+            }
           />
           <Input
             type="date"
             placeholder="From"
             value={filters.from}
-            onChange={e => setFilters({ ...filters, from: e.target.value })}
+            onChange={(e) => setFilters({ ...filters, from: e.target.value })}
           />
           <Input
             type="date"
             placeholder="To"
             value={filters.to}
-            onChange={e => setFilters({ ...filters, to: e.target.value })}
+            onChange={(e) => setFilters({ ...filters, to: e.target.value })}
           />
         </div>
-        <Button className="mt-2" onClick={loadData}>Apply Filters</Button>
+        <Button className="mt-2" onClick={loadData}>
+          Apply Filters
+        </Button>
       </Card>
 
       {/* Inventory List */}
@@ -92,7 +95,8 @@ const PartsInventoryReport = () => {
             <Card key={i} className="p-4">
               <div className="font-semibold">{p.part_name}</div>
               <div className="text-sm text-muted-foreground">
-                {p.service_center} • Category: {p.category} • Qty: {p.quantity} / Reorder: {p.reorder_level}
+                {p.service_center} • Category: {p.category} • Qty: {p.quantity}{" "}
+                / Reorder: {p.reorder_level}
               </div>
             </Card>
           ))}

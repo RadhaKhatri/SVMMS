@@ -9,10 +9,9 @@ import {
   Menu,
   Package,
   Receipt,
-  Settings,
   Users,
   Wrench,
-  X
+  X,
 } from "lucide-react";
 import { ReactNode, useState } from "react";
 
@@ -21,7 +20,10 @@ interface DashboardLayoutProps {
   role?: "customer" | "mechanic" | "manager" | "admin";
 }
 
-const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) => {
+const DashboardLayout = ({
+  children,
+  role = "customer",
+}: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const navItems = {
@@ -40,14 +42,14 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
       { to: "/manager/invoice", icon: FileText, label: "Invoice" },
       { to: "/manager/mechanics", icon: Wrench, label: "Mechanics" },
       { to: "/manager/inventory", icon: Package, label: "Inventory" },
-    ],  
+    ],
     admin: [
       { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
       { to: "/admin/users", icon: Users, label: "Users" },
       { to: "/admin/service_centers", icon: Wrench, label: "Service Centers" },
       { to: "/admin/inventory", icon: Package, label: "Inventory" },
       { to: "/admin/reports", icon: Receipt, label: "Reports" },
-    ],  
+    ],
   };
 
   const currentNav = navItems[role];
@@ -56,7 +58,7 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
     customer: "Customer Portal",
     mechanic: "Mechanic Portal",
     manager: "Manager Portal",
-    admin: "Admin Portal"
+    admin: "Admin Portal",
   };
 
   return (
@@ -69,7 +71,7 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
       >
         {/* Sidebar Glow Effect */}
         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
-        
+
         <div className="p-4 flex items-center justify-between border-b border-sidebar-border relative z-10">
           {sidebarOpen ? (
             <div className="flex items-center gap-3">
@@ -78,7 +80,9 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
               </div>
               <div>
                 <span className="font-bold text-lg block">SVMMS</span>
-                <span className="text-xs text-sidebar-primary">{roleLabels[role]}</span>
+                <span className="text-xs text-sidebar-primary">
+                  {roleLabels[role]}
+                </span>
               </div>
             </div>
           ) : (
@@ -92,7 +96,11 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="text-sidebar-foreground hover:bg-sidebar-accent shrink-0"
           >
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {sidebarOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </Button>
         </div>
 
@@ -112,7 +120,7 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
         </nav>
 
         <div className="p-4 border-t border-sidebar-border space-y-2">
-           {/** 
+          {/** 
           <NavLink
             to="/settings"
             className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-sidebar-accent transition-all duration-200"
@@ -124,7 +132,7 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
 
           <button
             className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-destructive/20 hover:text-destructive transition-all duration-200 w-full text-left"
-            onClick={() => window.location.href = "/"}
+            onClick={() => (window.location.href = "/")}
           >
             <LogOut className="h-5 w-5 shrink-0" />
             {sidebarOpen && <span className="font-medium">Logout</span>}
@@ -133,9 +141,7 @@ const DashboardLayout = ({ children, role = "customer" }: DashboardLayoutProps) 
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto bg-background">
-        {children}
-      </main>
+      <main className="flex-1 overflow-auto bg-background">{children}</main>
     </div>
   );
 };

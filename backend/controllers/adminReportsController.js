@@ -1,7 +1,7 @@
-import pool from "../db.js";
+import ExcelJS from "exceljs";
 import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
-import ExcelJS from "exceljs";
+import pool from "../db.js";
 
 /* =========================
    1️⃣ OVERVIEW / SUMMARY
@@ -44,7 +44,8 @@ export const getDetailedRevenueReport = async (req, res) => {
       filterSql += ` AND sc.id = $${params.length}`;
     }
 
-    const result = await pool.query(`
+    const result = await pool.query(
+      `
       SELECT
         i.invoice_number,
         DATE(i.issued_at) AS invoice_date,
@@ -67,7 +68,9 @@ export const getDetailedRevenueReport = async (req, res) => {
         AND i.issued_at BETWEEN $1 AND $2
         ${filterSql}
       ORDER BY i.issued_at DESC
-    `, params);
+    `,
+      params
+    );
 
     res.json(result.rows);
   } catch (err) {
@@ -216,7 +219,7 @@ LEFT JOIN job_cards jc
  AND jc.status='completed'
 LEFT JOIN job_tasks jt 
   ON jt.job_card_id = jc.id
-WHERE u.role = 'mechanic'
+WHERE u.role = 'mechanic' 
 GROUP BY u.name
 
     `);
@@ -259,7 +262,6 @@ export const getCustomerReport = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 /* =========================
    7️⃣ PARTS & INVENTORY
@@ -414,7 +416,7 @@ export const getCityWiseRevenue = async (req, res) => {
       JOIN job_cards jc ON jc.service_center_id = sc.id
       JOIN invoices i ON i.job_card_id = jc.id AND i.status='paid'
     `;
-    
+
     const params = [];
     if (from && to) {
       query += ` WHERE i.issued_at BETWEEN $1 AND $2`;
@@ -430,7 +432,6 @@ export const getCityWiseRevenue = async (req, res) => {
   }
 };
 
-
 /* =========================
    🔟 TIME-BASED REPORTS
 ========================= */
@@ -439,7 +440,8 @@ export const getPeakServiceTime = async (req, res) => {
     const { service_center_id, from, to } = req.query;
 
     let filters = [];
-    if (service_center_id) filters.push(`jc.service_center_id = ${service_center_id}`);
+    if (service_center_id)
+      filters.push(`jc.service_center_id = ${service_center_id}`);
     if (from) filters.push(`jc.created_at >= '${from}'`);
     if (to) filters.push(`jc.created_at <= '${to} 23:59:59'`);
 
@@ -469,7 +471,8 @@ export const getMonthlyTrend = async (req, res) => {
     let filters = [];
     if (service_center_id) filters.push(`jc.created_at >= '${from}'`);
     if (to) filters.push(`jc.created_at <= '${to} 23:59:59'`);
-    if (service_center_id) filters.push(`jc.service_center_id = ${service_center_id}`);
+    if (service_center_id)
+      filters.push(`jc.service_center_id = ${service_center_id}`);
 
     const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
@@ -500,7 +503,7 @@ export const emailReport = async (req, res) => {
     // TEMP success response
     res.json({
       success: true,
-      message: `Report (${section}) sent to ${email}`
+      message: `Report (${section}) sent to ${email}`,
     });
   } catch (err) {
     console.error(err);
@@ -514,7 +517,9 @@ export const emailReport = async (req, res) => {
 const dummyRes = () => {
   let data;
   return {
-    json: (d) => { data = d; },
+    json: (d) => {
+      data = d;
+    },
     getData: () => data,
   };
 };
@@ -524,7 +529,7 @@ const SECTION_ALIAS = {
   job_cards: "jobs",
 
   service_centers: "centers",
-"service-centers": "centers", 
+  "service-centers": "centers",
 
   mechanics: "mechanics",
   customers: "customers",
@@ -582,7 +587,6 @@ export const getReportData = async (section, filters = {}) => {
   return res.getData();
 };
 
-
 /* =========================
    2️⃣ Export PDF
 ========================= */
@@ -599,15 +603,17 @@ export const exportReportPDF = async (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
     doc.pipe(res);
 
-    doc.fontSize(18).text(`${section.toUpperCase()} REPORT`, { align: "center" });
+    doc
+      .fontSize(18)
+      .text(`${section.toUpperCase()} REPORT`, { align: "center" });
     doc.moveDown();
 
     if (!data || data.length === 0) {
       doc.text("No data available");
     } else {
       const headers = Object.keys(data[0]);
-      data.forEach(row => {
-        headers.forEach(h => doc.text(`${h}: ${row[h] ?? "-"}`));
+      data.forEach((row) => {
+        headers.forEach((h) => doc.text(`${h}: ${row[h] ?? "-"}`));
         doc.moveDown();
       });
     }
@@ -618,7 +624,6 @@ export const exportReportPDF = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 /* =========================
    3️⃣ Export Excel
@@ -634,12 +639,12 @@ export const exportReportExcel = async (req, res) => {
     if (!data || data.length === 0) {
       sheet.addRow(["No data available"]);
     } else {
-      sheet.columns = Object.keys(data[0]).map(k => ({
+      sheet.columns = Object.keys(data[0]).map((k) => ({
         header: k.toUpperCase(),
         key: k,
-        width: 20
+        width: 20,
       }));
-      data.forEach(row => sheet.addRow(row));
+      data.forEach((row) => sheet.addRow(row));
     }
 
     res.setHeader(
@@ -658,7 +663,6 @@ export const exportReportExcel = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 /* =========================
    4️⃣ Send Email with PDF
@@ -680,13 +684,13 @@ export const sendReportEmail = async (req, res) => {
     if (!data || data.length === 0) {
       sheet.addRow(["No data available"]);
     } else {
-      sheet.columns = Object.keys(data[0]).map(k => ({
+      sheet.columns = Object.keys(data[0]).map((k) => ({
         header: k.replace(/_/g, " ").toUpperCase(),
         key: k,
         width: 22,
       }));
 
-      data.forEach(row => sheet.addRow(row));
+      data.forEach((row) => sheet.addRow(row));
       sheet.getRow(1).font = { bold: true };
     }
 

@@ -9,7 +9,7 @@ export const createBooking = async (req, res) => {
     preferred_date,
     preferred_time,
     remarks,
-    services
+    services,
   } = req.body;
 
   if (
@@ -66,7 +66,7 @@ export const createBooking = async (req, res) => {
         service_center_id,
         preferred_date,
         preferred_time,
-        remarks || null
+        remarks || null,
       ]
     );
 
@@ -87,9 +87,8 @@ export const createBooking = async (req, res) => {
 
     res.status(201).json({
       message: "Booking created successfully",
-      booking_id: bookingId
+      booking_id: bookingId,
     });
-
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Booking error:", err);
@@ -161,13 +160,11 @@ export const getMyBookings = async (req, res) => {
 
     const result = await pool.query(query, values);
     res.json(result.rows);
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to fetch bookings" });
   }
 };
-
 
 /* 3️⃣ CANCEL BOOKING */
 export const cancelBooking = async (req, res) => {
@@ -244,21 +241,17 @@ export const deleteBooking = async (req, res) => {
 
     if (booking.rows[0].status !== "pending") {
       return res.status(400).json({
-        message: "Only pending bookings can be deleted"
+        message: "Only pending bookings can be deleted",
       });
     }
 
-    await pool.query(
-      `DELETE FROM service_bookings WHERE id = $1`,
-      [id]
-    );
+    await pool.query(`DELETE FROM service_bookings WHERE id = $1`, [id]);
 
     res.json({ message: "Booking deleted successfully" });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Delete failed" });
-  }  
+  }
 };
 
 /* 6️⃣ UPDATE BOOKING STATUS */
@@ -302,7 +295,6 @@ export const updateBookingStatus = async (req, res) => {
     });
 
     res.json({ message: "Booking status updated" });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Status update failed" });
@@ -356,7 +348,6 @@ export const completeJobCard = async (req, res) => {
     await client.query("COMMIT");
 
     res.json({ message: "Job completed & customer notified" });
-
   } catch (err) {
     await client.query("ROLLBACK");
     console.error(err);
@@ -365,7 +356,6 @@ export const completeJobCard = async (req, res) => {
     client.release();
   }
 };
-
 
 export const completeJobTask = async (req, res) => {
   const { taskId } = req.params;
@@ -427,42 +417,40 @@ export const completeJobTask = async (req, res) => {
     });
 
     // 5️⃣ AUTO COMPLETE JOB + BOOKING
-if (Number(completed) === Number(total) && Number(total) > 0) {
-
-  // Complete job card
-  await client.query(
-    `
+    if (Number(completed) === Number(total) && Number(total) > 0) {
+      // Complete job card
+      await client.query(
+        `
     UPDATE job_cards
     SET status = 'completed',
         end_time = NOW(),
         updated_at = NOW()
     WHERE id = $1
     `,
-    [jobCardId]
-  );
+        [jobCardId]
+      );
 
-  // Complete booking
-  await client.query(
-    `
+      // Complete booking
+      await client.query(
+        `
     UPDATE service_bookings
     SET status = 'completed',
         updated_at = NOW()
     WHERE id = $1
     `,
-    [booking_id]
-  );
+        [booking_id]
+      );
 
-  // 🔴 Notify customer booking completed
-  io.to(`customer_${customer_id}`).emit("booking-status-updated", {
-    bookingId: booking_id,
-    status: "completed",
-  });
-}
+      // 🔴 Notify customer booking completed
+      io.to(`customer_${customer_id}`).emit("booking-status-updated", {
+        bookingId: booking_id,
+        status: "completed",
+      });
+    }
 
     await client.query("COMMIT");
 
     res.json({ message: "Task completed", completed, total });
-
   } catch (err) {
     await client.query("ROLLBACK");
     console.error(err);
@@ -515,14 +503,14 @@ export const getJobProgressByBooking = async (req, res) => {
     }
 
     const tasks = result.rows
-      .filter(r => r.task_id)
-      .map(r => ({
+      .filter((r) => r.task_id)
+      .map((r) => ({
         id: r.task_id,
         service_name: r.service_name,
-        status: r.status
+        status: r.status,
       }));
 
-    const completed = tasks.filter(t => t.status === "completed").length;
+    const completed = tasks.filter((t) => t.status === "completed").length;
 
     res.json({
       jobStarted: true,
@@ -531,11 +519,10 @@ export const getJobProgressByBooking = async (req, res) => {
       startTime: result.rows[0].start_time,
       summary: {
         completed,
-        total: tasks.length
+        total: tasks.length,
       },
-      tasks
+      tasks,
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to load job progress" });

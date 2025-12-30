@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface JobCard {
@@ -44,7 +44,6 @@ const JobCards = () => {
       open: "bg-yellow-500/20 text-yellow-600",
       "in-service": "bg-blue-500/20 text-blue-600 ",
       completed: "bg-green-500/20 text-green-600",
-      
     };
 
     return (
@@ -68,29 +67,31 @@ const JobCards = () => {
             <CardHeader className="pb-2">
               <div className="flex justify-between items-center ">
                 <CardTitle>
-  {Array.isArray(jc.service_type)
-    ? jc.service_type.join(", ")
-    : jc.service_type || "Service Job"}
-</CardTitle>
+                  {Array.isArray(jc.service_type)
+                    ? jc.service_type.join(", ")
+                    : jc.service_type || "Service Job"}
+                </CardTitle>
                 {getStatusBadge(jc.status)}
               </div>
-            </CardHeader> 
+            </CardHeader>
 
             <CardContent className="flex justify-between items-center ">
               <div className="text-sm space-y-1 ">
-                <div><b>Customer:</b> {jc.customer_name}</div>
-                <div><b>Vehicle:</b> {jc.vehicle}</div>
                 <div>
-                  <b>Mechanic:</b>{" "}
-                  {jc.mechanic_name || "Not Assigned"}
+                  <b>Customer:</b> {jc.customer_name}
+                </div>
+                <div>
+                  <b>Vehicle:</b> {jc.vehicle}
+                </div>
+                <div>
+                  <b>Mechanic:</b> {jc.mechanic_name || "Not Assigned"}
                 </div>
               </div>
 
-              <Button className="border-white/30"
+              <Button
+                className="border-white/30"
                 variant="outline"
-                onClick={() =>
-                  navigate(`/manager/job-cards/${jc.job_card_id}`)
-                }
+                onClick={() => navigate(`/manager/job-cards/${jc.job_card_id}`)}
               >
                 View Job Card
               </Button>

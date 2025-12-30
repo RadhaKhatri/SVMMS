@@ -12,8 +12,7 @@ export const getServices = async (req, res) => {
 export const createService = async (req, res) => {
   const { name } = req.body;
 
-  if (!name)
-    return res.status(400).json({ message: "Service name required" });
+  if (!name) return res.status(400).json({ message: "Service name required" });
 
   const result = await pool.query(
     `INSERT INTO services (name)
@@ -25,10 +24,9 @@ export const createService = async (req, res) => {
 
   // If already exists
   if (result.rows.length === 0) {
-    const existing = await pool.query(
-      "SELECT * FROM services WHERE name=$1",
-      [name]
-    );
+    const existing = await pool.query("SELECT * FROM services WHERE name=$1", [
+      name,
+    ]);
     return res.json(existing.rows[0]);
   }
 

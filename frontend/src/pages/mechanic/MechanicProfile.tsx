@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 const MechanicProfile = () => {
   const { toast } = useToast();
@@ -41,11 +41,9 @@ const MechanicProfile = () => {
 
   const handleSave = async () => {
     try {
-      await axios.put(
-        "http://localhost:5000/api/mechanic/profile",
-        form,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.put("http://localhost:5000/api/mechanic/profile", form, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       setProfile(form);
       setIsEditing(false);
@@ -77,25 +75,49 @@ const MechanicProfile = () => {
           <CardContent className="space-y-4">
             {!isEditing ? (
               <>
-                <p><b>Name:</b> {profile.name}</p>
-                <p><b>Email:</b> {profile.email}</p>
-                <p><b>Phone:</b> {profile.phone || "-"}</p>
-                <p><b>Address:</b> {profile.address || "-"}</p>
-                <p><b>Hourly Rate:</b> ₹{profile.hourly_rate || 0}</p>
-                <p><b>Certifications:</b> {profile.certifications || "-"}</p>
-                <p><b>Status:</b> {profile.availability_status || "available"}</p>
-                <p><b>Notes:</b> {profile.notes || "-"}</p>
+                <p>
+                  <b>Name:</b> {profile.name}
+                </p>
+                <p>
+                  <b>Email:</b> {profile.email}
+                </p>
+                <p>
+                  <b>Phone:</b> {profile.phone || "-"}
+                </p>
+                <p>
+                  <b>Address:</b> {profile.address || "-"}
+                </p>
+                <p>
+                  <b>Hourly Rate:</b> ₹{profile.hourly_rate || 0}
+                </p>
+                <p>
+                  <b>Certifications:</b> {profile.certifications || "-"}
+                </p>
+                <p>
+                  <b>Status:</b> {profile.availability_status || "available"}
+                </p>
+                <p>
+                  <b>Notes:</b> {profile.notes || "-"}
+                </p>
               </>
             ) : (
               <>
                 <div>
                   <Label>Phone</Label>
-                  <Input name="phone" value={form.phone || ""} onChange={handleChange} />
+                  <Input
+                    name="phone"
+                    value={form.phone || ""}
+                    onChange={handleChange}
+                  />
                 </div>
 
                 <div>
                   <Label>Address</Label>
-                  <Textarea name="address" value={form.address || ""} onChange={handleChange} />
+                  <Textarea
+                    name="address"
+                    value={form.address || ""}
+                    onChange={handleChange}
+                  />
                 </div>
 
                 <div>
@@ -119,7 +141,11 @@ const MechanicProfile = () => {
 
                 <div>
                   <Label>Notes</Label>
-                  <Textarea name="notes" value={form.notes || ""} onChange={handleChange} />
+                  <Textarea
+                    name="notes"
+                    value={form.notes || ""}
+                    onChange={handleChange}
+                  />
                 </div>
 
                 <div className="flex gap-3">

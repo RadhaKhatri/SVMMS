@@ -1,28 +1,28 @@
 import express from "express";
 import {
-  getMyServiceCenter,
-  registerServiceCenter,
-  getPendingBookings,
+  addJobPart,
+  addJobTask,
+  addOrUpdatePart,
   approveBooking,
-  rejectBooking,
-  getMyMechanics,
-  getManagerProfile,
-  updateManagerProfile,
+  approveMechanic,
+  generateInvoice,
+  getAllParts,
+  getDashboardStats,
+  getInventory,
+  getInventoryLogs,
   getJobCardDetail,
   getJobCardsList,
-  rejectMechanic,
-  approveMechanic ,  
-  getPendingMechanicRequests ,
-  getDashboardStats ,
-  getInventory,
   getLowStockInventory,
-  addOrUpdatePart,
-  getInventoryLogs,
-  getAllParts ,
-  addJobTask,
-  addJobPart,
+  getManagerProfile,
+  getMyMechanics,
+  getMyServiceCenter,
+  getPendingBookings,
+  getPendingMechanicRequests,
+  registerServiceCenter,
+  rejectBooking,
+  rejectMechanic,
   updateJobCardStatus,
-  generateInvoice,
+  updateManagerProfile,
 } from "../controllers/managerController.js";
 
 import { authenticateUser } from "../middleware/authMiddleware.js";
@@ -53,7 +53,8 @@ router.post(
   "/service-center",
   authenticateUser,
   managerOnly,
-registerServiceCenter);
+  registerServiceCenter
+);
 
 /* ===============================
    BOOKINGS
@@ -82,12 +83,7 @@ router.post(
 /* ===============================
    MECHANICS
 ================================ */
-router.get(
-  "/mechanics",
-  authenticateUser,
-  managerOnly,
-  getMyMechanics
-);
+router.get("/mechanics", authenticateUser, managerOnly, getMyMechanics);
 
 router.get("/profile", authenticateUser, getManagerProfile);
 
@@ -95,7 +91,6 @@ router.put("/profile", authenticateUser, updateManagerProfile);
 
 router.get("/job-cards", authenticateUser, getJobCardsList);
 router.get("/job-cards/:id", authenticateUser, getJobCardDetail);
-
 
 /**
  * View pending mechanic requests
@@ -109,7 +104,7 @@ router.get(
 
 /**
  * Approve mechanic request
- */ 
+ */
 router.post(
   "/mechanics/requests/:id/approve",
   authenticateUser,
@@ -134,33 +129,23 @@ router.get(
   getDashboardStats
 );
 router.get("/inventory/logs", authenticateUser, managerOnly, getInventoryLogs);
-router.get("/inventory/low-stock", authenticateUser, managerOnly, getLowStockInventory);
+router.get(
+  "/inventory/low-stock",
+  authenticateUser,
+  managerOnly,
+  getLowStockInventory
+);
 router.get("/inventory", authenticateUser, managerOnly, getInventory);
 
-router.get(
-  "/parts",
-  authenticateUser,
-  managerOnly,
-  getAllParts
-);
+router.get("/parts", authenticateUser, managerOnly, getAllParts);
 
-router.post(
-  "/job-cards/:id/tasks",
-  authenticateUser,
-  managerOnly,
-  addJobTask
-);
-  
+router.post("/job-cards/:id/tasks", authenticateUser, managerOnly, addJobTask);
+
 /**
  * 2️⃣ Add Spare Part Usage to Job Card
  * POST /api/manager/job-cards/:job_card_id/parts
  */
-router.post(
-  "/job-cards/:id/parts",
-  authenticateUser,
-  managerOnly,
-  addJobPart
-);
+router.post("/job-cards/:id/parts", authenticateUser, managerOnly, addJobPart);
 
 /**
  * 3️⃣ Update Job Card Status (open → in_progress → completed)
@@ -179,12 +164,11 @@ router.patch(
  */
 router.post(
   "/job-cards/:id/invoice",
-  authenticateUser, 
+  authenticateUser,
   managerOnly,
   generateInvoice
 );
 
 router.post("/inventory", authenticateUser, managerOnly, addOrUpdatePart);
-
 
 export default router;

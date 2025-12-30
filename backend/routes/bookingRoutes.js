@@ -1,15 +1,15 @@
 import express from "express";
 import {
-  createBooking,
-  getMyBookings,
   cancelBooking,
-  updateBookingStatus,
+  completeJobCard,
+  completeJobTask,
+  createBooking,
   deleteBooking,
   getBookingById,
-  completeJobCard,
-  completeJobTask ,
+  getJobProgressByBooking,
+  getMyBookings,
   getTaskProgressByBooking,
-  getJobProgressByBooking 
+  updateBookingStatus,
 } from "../controllers/bookingController.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 
@@ -29,11 +29,11 @@ router.patch(
 );
 
 router.patch("/tasks/:taskId/complete", authenticateUser, completeJobTask);
-router.get("/:bookingId/task-progress", authenticateUser, getTaskProgressByBooking);
 router.get(
-  "/:id/job-progress",
+  "/:bookingId/task-progress",
   authenticateUser,
-  getJobProgressByBooking
+  getTaskProgressByBooking
 );
+router.get("/:id/job-progress", authenticateUser, getJobProgressByBooking);
 
 export default router;

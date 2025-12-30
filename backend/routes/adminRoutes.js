@@ -7,8 +7,8 @@ import { getAdminDashboardData,
         getPartsCatalog,
         createPart,
         updatePart,
-        getInventoryUsageLogs,
-          getMostUsedParts
+        getInventoryUsageLogs, 
+        getMostUsedParts
 } from "../controllers/adminController.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 const router = express.Router();

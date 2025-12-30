@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 interface ServiceCenter {
   id: number;
@@ -52,9 +52,7 @@ const ServiceCenterRequests = () => {
       });
 
       setCenters((prev) =>
-        prev.map((c) =>
-          c.id === id ? { ...c, status: "pending" } : c
-        )
+        prev.map((c) => (c.id === id ? { ...c, status: "pending" } : c))
       );
     } catch {
       toast({
@@ -82,7 +80,8 @@ const ServiceCenterRequests = () => {
           <Card key={center.id}>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>
-                {center.name} <span className="text-muted-foreground">({center.city})</span>
+                {center.name}{" "}
+                <span className="text-muted-foreground">({center.city})</span>
               </CardTitle>
 
               {center.status ? (

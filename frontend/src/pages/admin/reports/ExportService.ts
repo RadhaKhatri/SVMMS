@@ -8,7 +8,7 @@ const downloadFile = (blob: Blob, filename: string) => {
   a.download = filename;
   document.body.appendChild(a);
   a.click();
-  a.remove();
+  a.remove(); 
   window.URL.revokeObjectURL(url);
 };
 

@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 const ManagerProfile = () => {
   const [profile, setProfile] = useState<any>(null);
@@ -18,14 +18,11 @@ const ManagerProfile = () => {
   ========================= */
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/manager/profile",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const res = await axios.get("http://localhost:5000/api/manager/profile", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       let manager = res.data.manager;
 
@@ -64,15 +61,11 @@ const ManagerProfile = () => {
   ========================= */
   const handleSave = async () => {
     try {
-      await axios.put(
-        "http://localhost:5000/api/manager/profile",
-        form,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      await axios.put("http://localhost:5000/api/manager/profile", form, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       toast({
         title: "Profile Updated",
@@ -115,15 +108,11 @@ const ManagerProfile = () => {
   return (
     <DashboardLayout role="manager">
       <div className="p-6 space-y-6">
-
         {/* MANAGER PROFILE */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Manager Profile</CardTitle>
-            <Button
-              variant="outline"
-              onClick={() => setEditMode(!editMode)}
-            >
+            <Button variant="outline" onClick={() => setEditMode(!editMode)}>
               {editMode ? "Cancel" : "Edit"}
             </Button>
           </CardHeader>
@@ -148,9 +137,7 @@ const ManagerProfile = () => {
                 <Input
                   placeholder="Phone"
                   value={form.phone}
-                  onChange={(e) =>
-                    setForm({ ...form, phone: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 />
                 <Input
                   placeholder="Address"
@@ -163,8 +150,7 @@ const ManagerProfile = () => {
             ) : (
               <>
                 <div>
-                  Name: {profile.manager.first_name}{" "}
-                  {profile.manager.last_name}
+                  Name: {profile.manager.first_name} {profile.manager.last_name}
                 </div>
                 <div>Email: {profile.manager.email}</div>
                 <div>Phone: {profile.manager.phone}</div>
@@ -194,9 +180,7 @@ const ManagerProfile = () => {
                   <Input
                     placeholder="City"
                     value={form.city}
-                    onChange={(e) =>
-                      setForm({ ...form, city: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
                   />
                   <Input
                     placeholder="Contact Number"
@@ -209,17 +193,13 @@ const ManagerProfile = () => {
                     }
                   />
 
-                  <Button onClick={handleSave}>
-                    Save Changes
-                  </Button>
+                  <Button onClick={handleSave}>Save Changes</Button>
                 </>
               ) : (
                 <>
                   <div>Name: {profile.service_center.name}</div>
                   <div>City: {profile.service_center.city}</div>
-                  <div>
-                    Contact: {profile.service_center.contact_number}
-                  </div>
+                  <div>Contact: {profile.service_center.contact_number}</div>
                 </>
               )
             ) : (
@@ -229,7 +209,6 @@ const ManagerProfile = () => {
             )}
           </CardContent>
         </Card>
-
       </div>
     </DashboardLayout>
   );

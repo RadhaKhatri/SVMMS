@@ -1,6 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Award, Calendar, Car, ChevronRight, Clock, Play, Shield, Wrench } from "lucide-react";
+import {
+  Award,
+  Calendar,
+  Car,
+  ChevronRight,
+  Clock,
+  Play,
+  Shield,
+  Wrench,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Landing = () => {
@@ -13,11 +22,9 @@ const Landing = () => {
             <div className="p-2 bg-primary/10 rounded-lg glow-primary">
               <Wrench className="h-7 w-7 text-primary" />
             </div>
-            <span className="text-2xl font-bold text-foreground">
-              SVMMS
-            </span>
+            <span className="text-2xl font-bold text-foreground">SVMMS</span>
           </div>
-        {/* 
+          {/* 
           <nav className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-muted-foreground hover:text-primary transition-colors">Features</a>
             <a href="#services" className="text-muted-foreground hover:text-primary transition-colors">Services</a>
@@ -25,7 +32,10 @@ const Landing = () => {
           </nav> */}
           <div className="flex gap-3">
             <Link to="/login">
-              <Button variant="outline" className="border-primary/50 text-primary hover:bg-primary/10">
+              <Button
+                variant="outline"
+                className="border-primary/50 text-primary hover:bg-primary/10"
+              >
                 Login
               </Button>
             </Link>
@@ -47,44 +57,53 @@ const Landing = () => {
           <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl animate-pulse-glow" />
         </div>
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        
+
         {/* Diagonal Accent Lines */}
         <div className="absolute bottom-10 right-10 flex gap-2">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="w-3 h-16 bg-primary rounded-sm transform rotate-12" style={{ animationDelay: `${i * 0.1}s` }} />
+            <div
+              key={i}
+              className="w-3 h-16 bg-primary rounded-sm transform rotate-12"
+              style={{ animationDelay: `${i * 0.1}s` }}
+            />
           ))}
         </div>
 
         <div className="container mx-auto px-4 relative z-10 flex flex-col items-center justify-center h-full">
-  <div className="max-w-4xl text-center">
-    
-    {/* Line 1 */}
-    <h1 className="text-4xl md:text-5xl font-bold text-white">
-      SMART VEHICLE MAINTENANCE
-    </h1>
-
-    {/* Line 2 */}
-    <h1 className="text-4xl md:text-5xl font-bold text-white mt-3">
-      AND SERVICE MANAGEMENT SYSTEM
-    </h1>
-
-    {/* Line 3 */}
-    <h1 className="text-gradient text-5xl md:text-7xl font-extrabold mt-6">
-      SVMMS
-    </h1> <br />
-
+          <div className="max-w-4xl text-center">
+            {/* Line 1 */}
+            <h1 className="text-4xl md:text-5xl font-bold text-white">
+              SMART VEHICLE MAINTENANCE
+            </h1>
+            {/* Line 2 */}
+            <h1 className="text-4xl md:text-5xl font-bold text-white mt-3">
+              AND SERVICE MANAGEMENT SYSTEM
+            </h1>
+            {/* Line 3 */}
+            <h1 className="text-gradient text-5xl md:text-7xl font-extrabold mt-6">
+              SVMMS
+            </h1>{" "}
+            <br />
             <p className="text-xl text-muted-foreground mb-8 max-w-xl text-center mx-auto">
-              Find Your Perfect Service Today. Complete maintenance and repair management for modern automotive workshops.
+              Find Your Perfect Service Today. Complete maintenance and repair
+              management for modern automotive workshops.
             </p>
             <div className="flex gap-4 flex-wrap justify-center">
               <Link to="/register">
-                <Button size="lg" className="gradient-primary text-primary-foreground font-semibold text-lg px-8 glow-primary hover:scale-105 transition-transform">
+                <Button
+                  size="lg"
+                  className="gradient-primary text-primary-foreground font-semibold text-lg px-8 glow-primary hover:scale-105 transition-transform"
+                >
                   Book Service Now
                   <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" variant="outline" className="border-primary/50 text-foreground hover:bg-primary/10 text-lg px-8">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-primary/50 text-foreground hover:bg-primary/10 text-lg px-8"
+                >
                   <Play className="mr-2 h-5 w-5 text-primary" />
                   Dashboard Login
                 </Button>
@@ -103,7 +122,8 @@ const Landing = () => {
               Why Choose <span className="text-primary">SVMMS?</span>
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Industry-leading features designed for modern automotive service management
+              Industry-leading features designed for modern automotive service
+              management
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
@@ -139,16 +159,20 @@ const Landing = () => {
                 desc: "Rated 4.9/5 by thousands of satisfied customers worldwide",
               },
             ].map((feature, idx) => (
-              <Card 
-                key={idx} 
+              <Card
+                key={idx}
                 className="bg-card/50 bg-white/10 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group backdrop-blur-sm"
               >
                 <CardContent className="pt-8 pb-8">
                   <div className="p-4 bg-primary/10 rounded-xl w-fit mb-5 group-hover:bg-primary/20 transition-colors group-hover:glow-primary">
                     <feature.icon className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-3 text-foreground">{feature.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{feature.desc}</p>
+                  <h3 className="text-xl font-bold mb-3 text-foreground">
+                    {feature.title}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {feature.desc}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -167,7 +191,9 @@ const Landing = () => {
               { value: "24/7", label: "Support Available" },
             ].map((stat, idx) => (
               <div key={idx} className="space-y-2">
-                <div className="text-4xl md:text-5xl font-bold text-primary">{stat.value}</div>
+                <div className="text-4xl md:text-5xl font-bold text-primary">
+                  {stat.value}
+                </div>
                 <div className="text-muted-foreground">{stat.label}</div>
               </div>
             ))}
@@ -184,10 +210,14 @@ const Landing = () => {
             Ready to Get Started?
           </h2>
           <p className="text-lg mb-8 text-primary-foreground/80 max-w-2xl mx-auto">
-            Join thousands of satisfied customers managing their vehicle maintenance with the most trusted platform
+            Join thousands of satisfied customers managing their vehicle
+            maintenance with the most trusted platform
           </p>
           <Link to="/register">
-            <Button size="lg" className="bg-background text-primary hover:bg-background/90 text-lg px-10 font-semibold shadow-xl hover:scale-105 transition-transform">
+            <Button
+              size="lg"
+              className="bg-background text-primary hover:bg-background/90 text-lg px-10 font-semibold shadow-xl hover:scale-105 transition-transform"
+            >
               Create Free Account
               <ChevronRight className="ml-2 h-5 w-5" />
             </Button>
@@ -203,12 +233,11 @@ const Landing = () => {
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Wrench className="h-6 w-6 text-primary" />
               </div>
-              <span className="text-xl font-bold">
-                SVMMS
-              </span>
+              <span className="text-xl font-bold">SVMMS</span>
             </div>
             <p className="text-muted-foreground text-sm">
-              © 2025 SVMMS. All rights reserved. Premium Vehicle Service Management.
+              © 2025 SVMMS. All rights reserved. Premium Vehicle Service
+              Management.
             </p>
           </div>
         </div>

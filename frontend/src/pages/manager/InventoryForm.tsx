@@ -26,14 +26,11 @@ const InventoryForm = ({ part, onClose, onRefresh }: any) => {
   /* ---------------- Load Parts Dropdown ---------------- */
   useEffect(() => {
     const loadParts = async () => {
-      const res = await axios.get(
-        "http://localhost:5000/api/manager/parts",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const res = await axios.get("http://localhost:5000/api/manager/parts", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
       setParts(res.data);
     };
     loadParts();
@@ -58,50 +55,49 @@ const InventoryForm = ({ part, onClose, onRefresh }: any) => {
   /* ---------------- Save Inventory ---------------- */
   const savePart = async () => {
     try {
-     if (!form.quantity) {
-  alert("Quantity is required");
-  return;
-}
+      if (!form.quantity) {
+        alert("Quantity is required");
+        return;
+      }
 
-if (!isNewPart && !form.part_id) {
-  alert("Please select an existing part");
-  return;
-}
+      if (!isNewPart && !form.part_id) {
+        alert("Please select an existing part");
+        return;
+      }
 
-if (isNewPart && (!form.name || !form.unit_price)) {
-  alert("Part name and unit price are required");
-  return;
-}
-await axios.post(
-  "http://localhost:5000/api/manager/inventory",
-  {
-    ...(isNewPart
-      ? {
-          name: form.name,
-          unit_price: Number(form.unit_price),
-          category: form.category || null,
+      if (isNewPart && (!form.name || !form.unit_price)) {
+        alert("Part name and unit price are required");
+        return;
+      }
+      await axios.post(
+        "http://localhost:5000/api/manager/inventory",
+        {
+          ...(isNewPart
+            ? {
+                name: form.name,
+                unit_price: Number(form.unit_price),
+                category: form.category || null,
+              }
+            : {
+                part_id: Number(form.part_id),
+              }),
+          quantity: Number(form.quantity),
+          reorder_level: Number(form.reorder_level) || 0,
+          location: form.location || null,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      : {
-          part_id: Number(form.part_id),
-        }),
-    quantity: Number(form.quantity),
-    reorder_level: Number(form.reorder_level) || 0,
-    location: form.location || null,
-  },
-  {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  }
-);
-
+      );
 
       onRefresh();
-      onClose(); 
+      onClose();
     } catch (err: any) {
-  console.error("Save failed:", err.response?.data);
-  alert(err.response?.data?.message || "Failed to save inventory");
-}
+      console.error("Save failed:", err.response?.data);
+      alert(err.response?.data?.message || "Failed to save inventory");
+    }
   };
 
   return (
@@ -139,9 +135,7 @@ await axios.post(
           <select
             className="w-full border rounded-md px-3 py-2 bg-background"
             value={form.part_id}
-            onChange={(e) =>
-              setForm({ ...form, part_id: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, part_id: e.target.value })}
             disabled={!!part}
           >
             <option value="">Select Part</option>
@@ -159,26 +153,20 @@ await axios.post(
             <Input
               placeholder="Part Name"
               value={form.name}
-              onChange={(e) =>
-                setForm({ ...form, name: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
 
             <Input
               type="number"
               placeholder="Unit Price"
               value={form.unit_price}
-              onChange={(e) =>
-                setForm({ ...form, unit_price: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, unit_price: e.target.value })}
             />
 
             <Input
               placeholder="Category (optional)"
               value={form.category}
-              onChange={(e) =>
-                setForm({ ...form, category: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
             />
           </>
         )}
@@ -188,26 +176,20 @@ await axios.post(
           type="number"
           placeholder="Quantity"
           value={form.quantity}
-          onChange={(e) =>
-            setForm({ ...form, quantity: e.target.value })
-          }
+          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
         />
 
         <Input
           type="number"
           placeholder="Reorder Level"
           value={form.reorder_level}
-          onChange={(e) =>
-            setForm({ ...form, reorder_level: e.target.value })
-          }
+          onChange={(e) => setForm({ ...form, reorder_level: e.target.value })}
         />
 
         <Input
           placeholder="Location (Rack / Shelf / Bin)"
           value={form.location}
-          onChange={(e) =>
-            setForm({ ...form, location: e.target.value })
-          }
+          onChange={(e) => setForm({ ...form, location: e.target.value })}
         />
 
         {/* -------- Actions -------- */}
@@ -220,6 +202,6 @@ await axios.post(
       </div>
     </div>
   );
-};
+}; 
 
 export default InventoryForm;

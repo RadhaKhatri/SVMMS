@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { Card } from "@/components/ui/card";
 import {
   Table,
+  TableBody,
+  TableCell,
+  TableHead,
   TableHeader,
   TableRow,
-  TableHead,
-  TableBody,
-  TableCell
 } from "@/components/ui/table";
-import { Card } from "@/components/ui/card";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import ReportFilters from "./ReportFilters";
 
 interface MechanicRow {
@@ -19,18 +19,16 @@ interface MechanicRow {
 
 const MechanicReport = () => {
   const today = new Date().toISOString().split("T")[0];
-  const firstDay = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    1
-  ).toISOString().split("T")[0];
+  const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    .toISOString()
+    .split("T")[0];
 
   const [rows, setRows] = useState<MechanicRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [filters, setFilters] = useState({
     from: firstDay,
-    to: today
+    to: today,
   });
 
   const loadData = () => {
@@ -39,10 +37,10 @@ const MechanicReport = () => {
       .get("http://localhost:5000/api/admin/reports/mechanics", {
         params: filters,
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       })
-      .then(res => setRows(res.data))
+      .then((res) => setRows(res.data))
       .finally(() => setLoading(false));
   };
 
@@ -52,7 +50,6 @@ const MechanicReport = () => {
 
   return (
     <div className="space-y-4">
-
       {/* Filters */}
       <ReportFilters
         filters={filters}
@@ -62,9 +59,7 @@ const MechanicReport = () => {
 
       {/* Header */}
       <Card className="p-4">
-        <h2 className="text-lg font-semibold">
-          Mechanic Performance Report
-        </h2>
+        <h2 className="text-lg font-semibold">Mechanic Performance Report</h2>
         <p className="text-sm text-muted-foreground">
           Completed jobs and labor earnings per mechanic
         </p>
@@ -76,12 +71,8 @@ const MechanicReport = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Mechanic</TableHead>
-              <TableHead className="text-center">
-                Jobs Completed
-              </TableHead>
-              <TableHead className="text-right">
-                Labor Earned (₹)
-              </TableHead>
+              <TableHead className="text-center">Jobs Completed</TableHead>
+              <TableHead className="text-right">Labor Earned (₹)</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -104,9 +95,7 @@ const MechanicReport = () => {
 
             {rows.map((r, i) => (
               <TableRow key={i}>
-                <TableCell className="font-medium">
-                  {r.mechanic}
-                </TableCell>
+                <TableCell className="font-medium">{r.mechanic}</TableCell>
                 <TableCell className="text-center">
                   {r.jobs_completed}
                 </TableCell>
@@ -118,7 +107,6 @@ const MechanicReport = () => {
           </TableBody>
         </Table>
       </div>
-
     </div>
   );
 };

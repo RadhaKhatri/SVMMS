@@ -4,18 +4,17 @@ import axios from "axios";
 import { useState } from "react";
 
 const PartForm = ({ part, onClose, onSaved }: any) => {
-  
   const [form, setForm] = useState({
-  part_code: part?.part_code || "",
-  name: part?.name || "",
-  description: part?.description || "",
-  category: part?.category || "",
-  unit_price: part?.unit_price || "",
-  service_center_id: "",
-  quantity: "",
-  reorder_level: "",
-  location: "",
-});
+    part_code: part?.part_code || "",
+    name: part?.name || "",
+    description: part?.description || "",
+    category: part?.category || "",
+    unit_price: part?.unit_price || "",
+    service_center_id: "",
+    quantity: "",
+    reorder_level: "",
+    location: "",
+  });
 
   const save = async () => {
     const url = part
@@ -40,25 +39,36 @@ const PartForm = ({ part, onClose, onSaved }: any) => {
         </h2>
 
         {!part && (
-          <Input placeholder="Part Code"
+          <Input
+            placeholder="Part Code"
             value={form.part_code}
-            onChange={e => setForm({ ...form, part_code: e.target.value })} />
+            onChange={(e) => setForm({ ...form, part_code: e.target.value })}
+          />
         )}
 
-        <Input placeholder="Name"
+        <Input
+          placeholder="Name"
           value={form.name}
-          onChange={e => setForm({ ...form, name: e.target.value })} />
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
 
-        <Input placeholder="Category"
+        <Input
+          placeholder="Category"
           value={form.category}
-          onChange={e => setForm({ ...form, category: e.target.value })} />
+          onChange={(e) => setForm({ ...form, category: e.target.value })}
+        />
 
-        <Input type="number" placeholder="Unit Price"
+        <Input
+          type="number"
+          placeholder="Unit Price"
           value={form.unit_price}
-          onChange={e => setForm({ ...form, unit_price: e.target.value })} />
+          onChange={(e) => setForm({ ...form, unit_price: e.target.value })}
+        />
 
         <div className="flex justify-end gap-2 pt-3">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
           <Button onClick={save}>Save</Button>
         </div>
       </div>

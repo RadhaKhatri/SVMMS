@@ -12,7 +12,7 @@ const BarChartCard = ({ data, xKey, yKey, title }: any) => (
         <Bar dataKey={yKey} />
       </BarChart>
     </ResponsiveContainer>
-  </Card>
+  </Card> 
 );
 
 export default BarChartCard; 

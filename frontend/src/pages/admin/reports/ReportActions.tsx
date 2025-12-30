@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { exportPDF, exportExcel, sendEmail } from "./ExportService";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { exportExcel, exportPDF, sendEmail } from "./ExportService";
 
 interface ReportActionsProps {
   section: string;
@@ -21,7 +21,7 @@ const ReportActions = ({ section, filters }: ReportActionsProps) => {
 
   const handlePDF = async () => {
     try {
-      setLoading(l => ({ ...l, pdf: true }));
+      setLoading((l) => ({ ...l, pdf: true }));
       await exportPDF(section, filters);
 
       toast({
@@ -35,13 +35,13 @@ const ReportActions = ({ section, filters }: ReportActionsProps) => {
         variant: "destructive",
       });
     } finally {
-      setLoading(l => ({ ...l, pdf: false }));
+      setLoading((l) => ({ ...l, pdf: false }));
     }
   };
 
   const handleExcel = async () => {
     try {
-      setLoading(l => ({ ...l, excel: true }));
+      setLoading((l) => ({ ...l, excel: true }));
       await exportExcel(section, filters);
 
       toast({
@@ -55,7 +55,7 @@ const ReportActions = ({ section, filters }: ReportActionsProps) => {
         variant: "destructive",
       });
     } finally {
-      setLoading(l => ({ ...l, excel: false }));
+      setLoading((l) => ({ ...l, excel: false }));
     }
   };
 
@@ -70,7 +70,7 @@ const ReportActions = ({ section, filters }: ReportActionsProps) => {
     }
 
     try {
-      setLoading(l => ({ ...l, email: true }));
+      setLoading((l) => ({ ...l, email: true }));
       await sendEmail(email, section, filters);
 
       toast({
@@ -86,15 +86,15 @@ const ReportActions = ({ section, filters }: ReportActionsProps) => {
         variant: "destructive",
       });
     } finally {
-      setLoading(l => ({ ...l, email: false }));
+      setLoading((l) => ({ ...l, email: false }));
     }
   };
 
   return (
     <div className="flex flex-wrap gap-9 mb-4 items-center">
-    {/*  <Button onClick={handlePDF} disabled={loading.pdf}>
+      {/*  <Button onClick={handlePDF} disabled={loading.pdf}>
         { ? "Exporting PDF..." : "Export PDF"}
-      </Button>*/} 
+      </Button>*/}
 
       <Button onClick={handleExcel} disabled={loading.excel}>
         {loading.excel ? "Exporting Excel..." : "Export Excel"}
@@ -103,7 +103,7 @@ const ReportActions = ({ section, filters }: ReportActionsProps) => {
       <Input
         placeholder="Email address"
         value={email}
-        onChange={e => setEmail(e.target.value)}
+        onChange={(e) => setEmail(e.target.value)}
         className="w-64"
       />
 

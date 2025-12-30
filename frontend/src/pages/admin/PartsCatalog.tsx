@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import axios from "axios";
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import PartForm from "./PartForm";
 
 const PartsCatalog = () => {
@@ -25,19 +25,30 @@ const PartsCatalog = () => {
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button onClick={() => { setEditPart(null); setOpen(true); }}>
+        <Button
+          onClick={() => {
+            setEditPart(null);
+            setOpen(true);
+          }}
+        >
           <Plus className="mr-2 h-4 w-4" /> Add Part
         </Button>
       </div>
 
       <div className="grid gap-4">
-        {parts.map(p => (
+        {parts.map((p) => (
           <Card key={p.id}>
             <CardHeader className="pb-2">
               <CardTitle className="flex justify-between">
                 {p.name}
-                <Button size="sm" variant="outline"
-                  onClick={() => { setEditPart(p); setOpen(true); }}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setEditPart(p);
+                    setOpen(true);
+                  }}
+                >
                   Edit
                 </Button>
               </CardTitle>
@@ -45,9 +56,7 @@ const PartsCatalog = () => {
             <CardContent className="text-sm text-muted-foreground">
               <div>Code: {p.part_code}</div>
               <div>Category: {p.category}</div>
-              <div className="font-semibold text-primary">
-                ₹{p.unit_price}
-              </div>
+              <div className="font-semibold text-primary">₹{p.unit_price}</div>
             </CardContent>
           </Card>
         ))}

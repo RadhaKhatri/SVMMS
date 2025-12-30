@@ -1,26 +1,22 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
 import {
   Table,
+  TableBody,
+  TableCell,
   TableHead,
   TableHeader,
   TableRow,
-  TableCell,
-  TableBody
 } from "@/components/ui/table";
-import ReportFilters from "./ReportFilters";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import ReportActions from "./ReportActions";
+import ReportFilters from "./ReportFilters";
 
 const RevenueReport = () => {
   const today = new Date();
 
-  const firstDayOfMonth = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    1
-  )
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
     .toISOString()
-    .split("T")[0]; 
+    .split("T")[0];
 
   const todayDate = today.toISOString().split("T")[0];
 
@@ -29,7 +25,7 @@ const RevenueReport = () => {
     from: firstDayOfMonth,
     to: todayDate,
     city: "",
-    serviceCenterId: ""
+    serviceCenterId: "",
   });
 
   const loadData = () => {
@@ -39,13 +35,13 @@ const RevenueReport = () => {
           from: filters.from,
           to: filters.to,
           city: filters.city || undefined,
-          serviceCenterId: filters.serviceCenterId || undefined
+          serviceCenterId: filters.serviceCenterId || undefined,
         },
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       })
-      .then(res => setRows(res.data));
+      .then((res) => setRows(res.data));
   };
 
   useEffect(() => {
@@ -54,7 +50,6 @@ const RevenueReport = () => {
 
   return (
     <div className="space-y-4">
-
       {/* 🔍 Filters */}
       <ReportFilters
         filters={filters}
@@ -109,7 +104,6 @@ const RevenueReport = () => {
           </TableBody>
         </Table>
       </div>
-
     </div>
   );
 };

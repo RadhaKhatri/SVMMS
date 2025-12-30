@@ -1,6 +1,6 @@
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 /* ================================
    Reusable Filter Props
@@ -30,7 +30,7 @@ const ReportFilters = ({
   onApply,
   showStatus = false,
   showCity = false,
-  showServiceCenter = false
+  showServiceCenter = false,
 }: ReportFiltersProps) => {
   const today = new Date().toISOString().split("T")[0];
 
@@ -61,7 +61,6 @@ const ReportFilters = ({
     <Card className="p-4 space-y-4">
       <div>
         <h3 className="font-semibold">Filters</h3>
-        
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -71,9 +70,7 @@ const ReportFilters = ({
           <Input
             type="date"
             value={filters.from}
-            onChange={e =>
-              setFilters({ ...filters, from: e.target.value })
-            }
+            onChange={(e) => setFilters({ ...filters, from: e.target.value })}
           />
         </div>
 
@@ -83,9 +80,7 @@ const ReportFilters = ({
           <Input
             type="date"
             value={filters.to}
-            onChange={e =>
-              setFilters({ ...filters, to: e.target.value })
-            }
+            onChange={(e) => setFilters({ ...filters, to: e.target.value })}
           />
         </div>
 
@@ -94,9 +89,7 @@ const ReportFilters = ({
           <Input
             placeholder="City"
             value={filters.city || ""}
-            onChange={e =>
-              setFilters({ ...filters, city: e.target.value })
-            }
+            onChange={(e) => setFilters({ ...filters, city: e.target.value })}
           />
         )}
 
@@ -105,10 +98,10 @@ const ReportFilters = ({
           <Input
             placeholder="Service Center ID"
             value={filters.serviceCenterId || ""}
-            onChange={e =>
+            onChange={(e) =>
               setFilters({
                 ...filters,
-                serviceCenterId: e.target.value
+                serviceCenterId: e.target.value,
               })
             }
           />
@@ -119,9 +112,7 @@ const ReportFilters = ({
           <Input
             placeholder="Status (open / completed)"
             value={filters.status || ""}
-            onChange={e =>
-              setFilters({ ...filters, status: e.target.value })
-            }
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
           />
         )}
       </div>

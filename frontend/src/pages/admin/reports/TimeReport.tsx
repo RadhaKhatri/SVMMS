@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 interface PeakHour {
   hour: number;
@@ -28,7 +28,9 @@ const TimeReport = () => {
 
   const loadData = async () => {
     setLoading(true);
-    const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
+    const headers = {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    };
 
     try {
       const [peakRes, monthlyRes] = await Promise.all([
@@ -57,7 +59,6 @@ const TimeReport = () => {
 
   return (
     <div className="space-y-6">
-
       {/* Filters */}
       <Card className="p-4 space-y-3">
         <h2 className="text-lg font-semibold">Time & Trend Reports</h2>
@@ -98,7 +99,9 @@ const TimeReport = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {peakHours.map((p, i) => (
               <Card key={i} className="p-4 text-center">
-                <div className="text-sm text-muted-foreground">Hour {p.hour}:00</div>
+                <div className="text-sm text-muted-foreground">
+                  Hour {p.hour}:00
+                </div>
                 <div className="text-xl font-bold">{p.jobs}</div>
               </Card>
             ))}

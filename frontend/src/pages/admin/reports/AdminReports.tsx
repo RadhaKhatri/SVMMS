@@ -1,15 +1,15 @@
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import OverviewReport from "./OverviewReport";
-import RevenueReport from "./RevenueReport";
-import JobReport from "./JobReport";
-import ServiceCenterReport from "./ServiceCenterReport";
-import MechanicReport from "./MechanicReport";
-import CustomerReport from "./CustomerReport";
-import PartsInventoryReport from "./PartsInventoryReport";
 import BookingReport from "./BookingReport";
+import CustomerReport from "./CustomerReport";
+import JobReport from "./JobReport";
 import LocationReport from "./LocationReport";
+import MechanicReport from "./MechanicReport";
+import OverviewReport from "./OverviewReport";
+import PartsInventoryReport from "./PartsInventoryReport";
+import RevenueReport from "./RevenueReport";
+import ServiceCenterReport from "./ServiceCenterReport";
 import TimeReport from "./TimeReport";
 
 const AdminReports = () => {
@@ -37,16 +37,36 @@ const AdminReports = () => {
             <TabsTrigger value="time">Time</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview"><OverviewReport /></TabsContent>
-          <TabsContent value="revenue"><RevenueReport /></TabsContent>
-          <TabsContent value="jobs"><JobReport /></TabsContent>
-          <TabsContent value="centers"><ServiceCenterReport /></TabsContent>
-          <TabsContent value="mechanics"><MechanicReport /></TabsContent>
-          <TabsContent value="customers"><CustomerReport /></TabsContent>
-          <TabsContent value="parts"><PartsInventoryReport /></TabsContent>
-          <TabsContent value="bookings"><BookingReport /></TabsContent>
-          <TabsContent value="location"><LocationReport /></TabsContent>
-          <TabsContent value="time"><TimeReport /></TabsContent>
+          <TabsContent value="overview">
+            <OverviewReport />
+          </TabsContent>
+          <TabsContent value="revenue">
+            <RevenueReport />
+          </TabsContent>
+          <TabsContent value="jobs">
+            <JobReport />
+          </TabsContent>
+          <TabsContent value="centers">
+            <ServiceCenterReport />
+          </TabsContent>
+          <TabsContent value="mechanics">
+            <MechanicReport />
+          </TabsContent>
+          <TabsContent value="customers">
+            <CustomerReport />
+          </TabsContent>
+          <TabsContent value="parts">
+            <PartsInventoryReport />
+          </TabsContent>
+          <TabsContent value="bookings">
+            <BookingReport />
+          </TabsContent>
+          <TabsContent value="location">
+            <LocationReport />
+          </TabsContent>
+          <TabsContent value="time">
+            <TimeReport />
+          </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>

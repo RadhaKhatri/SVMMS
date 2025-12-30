@@ -1,17 +1,17 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
+import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -54,8 +54,7 @@ const ResetPassword = () => {
         variant: "destructive",
         title: "Reset failed",
         description:
-          error.response?.data?.message ||
-          "Invalid or expired reset link.",
+          error.response?.data?.message || "Invalid or expired reset link.",
       });
     } finally {
       setLoading(false);
@@ -76,7 +75,6 @@ const ResetPassword = () => {
 
         <CardContent>
           <form onSubmit={submit} className="space-y-4">
-
             {/* New Password */}
             <div className="relative">
               <Input

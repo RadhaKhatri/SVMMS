@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 interface PendingMechanic {
   id: number;
@@ -27,7 +27,7 @@ const ManagerMechanics = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchMechanics = async () => {
-    try { 
+    try {
       const [pendingRes, approvedRes] = await Promise.all([
         axios.get("http://localhost:5000/api/manager/mechanics/requests", {
           headers: { Authorization: `Bearer ${token}` },
@@ -58,8 +58,8 @@ const ManagerMechanics = () => {
     try {
       await axios.post(
         `http://localhost:5000/api/manager/mechanics/requests/${id}/approve`,
-  {},
-  { headers: { Authorization: `Bearer ${token}` } }
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       toast({ title: "Mechanic Approved" });
@@ -77,8 +77,8 @@ const ManagerMechanics = () => {
     try {
       await axios.post(
         `http://localhost:5000/api/manager/mechanics/requests/${id}/reject`,
-  {},
-  { headers: { Authorization: `Bearer ${token}` } }
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       toast({

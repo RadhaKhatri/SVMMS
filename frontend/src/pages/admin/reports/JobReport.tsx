@@ -1,30 +1,28 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
 import {
   Table,
+  TableBody,
+  TableCell,
+  TableHead,
   TableHeader,
   TableRow,
-  TableHead,
-  TableBody,
-  TableCell
 } from "@/components/ui/table";
-import ReportFilters from "./ReportFilters";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import ReportActions from "./ReportActions";
+import ReportFilters from "./ReportFilters";
 
 const JobCardReport = () => {
   const today = new Date().toISOString().split("T")[0];
-  const firstDay = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    1
-  ).toISOString().split("T")[0];
+  const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    .toISOString()
+    .split("T")[0];
 
   const [rows, setRows] = useState<any[]>([]);
   const [filters, setFilters] = useState({
     from: firstDay,
     to: today,
     status: "",
-    serviceCenterId: ""
+    serviceCenterId: "",
   });
 
   const loadData = () => {
@@ -34,13 +32,13 @@ const JobCardReport = () => {
           from: filters.from,
           to: filters.to,
           status: filters.status || undefined,
-          serviceCenterId: filters.serviceCenterId || undefined
+          serviceCenterId: filters.serviceCenterId || undefined,
         },
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       })
-      .then(res => setRows(res.data));
+      .then((res) => setRows(res.data));
   };
 
   useEffect(() => {
@@ -49,7 +47,6 @@ const JobCardReport = () => {
 
   return (
     <div className="space-y-4">
-
       {/* Filters */}
       <ReportFilters
         filters={filters}
@@ -87,13 +84,15 @@ const JobCardReport = () => {
                 <TableCell>{r.customer_name}</TableCell>
                 <TableCell>{r.mechanic_name || "-"}</TableCell>
                 <TableCell>
-                  {r.make} {r.model} ({r.year}) 
+                  {r.make} {r.model} ({r.year})
                 </TableCell>
                 <TableCell>{r.service_center}</TableCell>
                 <TableCell>₹{r.total_labor_cost}</TableCell>
                 <TableCell>₹{r.total_parts_cost}</TableCell>
                 <TableCell className="font-semibold text-primary">
-                  ₹{Number(r.total_labor_cost || 0) + Number(r.total_parts_cost || 0)}
+                  ₹
+                  {Number(r.total_labor_cost || 0) +
+                    Number(r.total_parts_cost || 0)}
                 </TableCell>
               </TableRow>
             ))}

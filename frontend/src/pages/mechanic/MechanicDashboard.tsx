@@ -1,13 +1,12 @@
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Clock, CheckCircle, Wrench } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { CheckCircle, Clock, FileText } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 interface ServiceCenter {
   id: number;
@@ -26,45 +25,44 @@ interface JobCard {
 }
 
 const MechanicDashboard = () => {
-
   const [jobCards, setJobCards] = useState<JobCard[]>([]);
-const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-const fetchJobCards = async () => {
-  try {
-    const res = await axios.get(
-      "http://localhost:5000/api/mechanic/job-cards",
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setJobCards(res.data);
-  } catch (err) {
-    toast({
-      title: "Error",
-      description: "Failed to load job cards",
-      variant: "destructive",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchJobCards = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/mechanic/job-cards",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setJobCards(res.data);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to load job cards",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-useEffect(() => {
-  fetchJobCards();
-}, []);
+  useEffect(() => {
+    fetchJobCards();
+  }, []);
 
-const assignedJobs = jobCards.length;
-const inProgress = jobCards.filter(j => j.status === "in_progress").length;
-const completedToday = jobCards.filter(
-  j =>
-    j.status === "completed" &&
-    new Date(j.created_at).toDateString() === new Date().toDateString()
-).length;
+  const assignedJobs = jobCards.length;
+  const inProgress = jobCards.filter((j) => j.status === "in_progress").length;
+  const completedToday = jobCards.filter(
+    (j) =>
+      j.status === "completed" &&
+      new Date(j.created_at).toDateString() === new Date().toDateString()
+  ).length;
 
-const stats = [
-  { title: "Assigned Jobs", value: assignedJobs, icon: FileText },
-  { title: "In Progress", value: inProgress, icon: Clock },
-  { title: "Completed Today", value: completedToday, icon: CheckCircle },
-];
+  const stats = [
+    { title: "Assigned Jobs", value: assignedJobs, icon: FileText },
+    { title: "In Progress", value: inProgress, icon: Clock },
+    { title: "Completed Today", value: completedToday, icon: CheckCircle },
+  ];
 
   const activeJobs = [
     {
@@ -94,9 +92,12 @@ const stats = [
   // Fetch service centers + request status
   const fetchServiceCenters = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/mechanic/request-center", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        "http://localhost:5000/api/mechanic/request-center",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
     } catch (err) {
       toast({
         title: "Error",
@@ -118,7 +119,10 @@ const stats = [
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast({ title: "Request Sent", description: "Your request is now pending approval." });
+      toast({
+        title: "Request Sent",
+        description: "Your request is now pending approval.",
+      });
       fetchServiceCenters(); // refresh status
     } catch (err) {
       toast({
@@ -134,20 +138,26 @@ const stats = [
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between ">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Mechanic Dashboard</h1>
-          <p className="text-muted-foreground">Manage your assigned job cards</p>
-        </div>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">
+              Mechanic Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              Manage your assigned job cards
+            </p>
+          </div>
 
-           <Link to="/mechanic/service-center-requests">
-          <Button variant="secondary" className="border border-white">
-            Request Service Center
-          </Button>
-        </Link>
+          <Link to="/mechanic/service-center-requests">
+            <Button variant="secondary" className="border border-white">
+              Request Service Center
+            </Button>
+          </Link>
 
-         <Link to="/mechanic/profile">
-          <Button variant="outline" className="border border-white">My Profile</Button>
-        </Link>
+          <Link to="/mechanic/profile">
+            <Button variant="outline" className="border border-white">
+              My Profile
+            </Button>
+          </Link>
         </div>
 
         {/* Stats */}
@@ -155,8 +165,10 @@ const stats = [
           {stats.map((stat, idx) => (
             <Card key={idx}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <stat.icon className="text-green"  />
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <stat.icon className="text-green" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{stat.value}</div>
@@ -172,50 +184,51 @@ const stats = [
           </CardHeader>
           <CardContent className="space-y-4">
             {loading ? (
-  <p className="text-muted-foreground">Loading jobs...</p>
-) : jobCards.length === 0 ? (
-  <p className="text-muted-foreground">No assigned job cards</p>
-) : (
-  jobCards.map((job) => (
-    <div
-      key={job.job_card_id}
-      className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-primary">
-              JC-{job.job_card_id}
-            </span>
-            <Badge
-              variant={
-                job.status === "completed"
-                  ? "secondary"
-                  : job.status === "in_progress"
-                  ? "secondary"
-                  : "outline"
-              }
-            >
-              {job.status}
-            </Badge>
-          </div>
+              <p className="text-muted-foreground">Loading jobs...</p>
+            ) : jobCards.length === 0 ? (
+              <p className="text-muted-foreground">No assigned job cards</p>
+            ) : (
+              jobCards.map((job) => (
+                <div
+                  key={job.job_card_id}
+                  className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-primary">
+                          JC-{job.job_card_id}
+                        </span>
+                        <Badge
+                          variant={
+                            job.status === "completed"
+                              ? "secondary"
+                              : job.status === "in_progress"
+                              ? "secondary"
+                              : "outline"
+                          }
+                        >
+                          {job.status}
+                        </Badge>
+                      </div>
 
-          <h3 className="font-semibold mt-1">
-            {job.vehicle}
-          </h3>
+                      <h3 className="font-semibold mt-1">{job.vehicle}</h3>
 
-          <p className="text-sm text-muted-foreground">
-            {job.service_type} • {job.customer_name}
-          </p>
-        </div>
-          <Button  onClick={() =>
-                  navigate(`/mechanic/job-cards/${job.job_card_id}`)
-                }>View Details</Button>
-      </div>
-    </div>
-  ))
-)}
-
+                      <p className="text-sm text-muted-foreground">
+                        {job.service_type} • {job.customer_name}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() =>
+                        navigate(`/mechanic/job-cards/${job.job_card_id}`)
+                      }
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

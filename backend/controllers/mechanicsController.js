@@ -244,8 +244,8 @@ export const getMyJobCardDetail = async (req, res) => {
         vin: r.vin,
         mileage: r.mileage,
       },
-      tasks: tasks.rows,   // ✅ FIX
-      parts: parts.rows,   // ✅ FIX
+      tasks: tasks.rows, // ✅ FIX
+      parts: parts.rows, // ✅ FIX
       notes: r.notes,
     });
   } catch (err) {
@@ -260,7 +260,12 @@ export const updateJobStatus = async (req, res) => {
     const { status } = req.body;
 
     // ✅ Validate allowed statuses
-    const allowed = ["open", "in_progress", "ready_for_completion", "completed"];
+    const allowed = [
+      "open",
+      "in_progress",
+      "ready_for_completion",
+      "completed",
+    ];
     if (!allowed.includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
@@ -299,10 +304,9 @@ export const updateJobStatus = async (req, res) => {
     }
 
     if (status === "completed") {
-      await pool.query(
-        `UPDATE job_cards SET end_time = NOW() WHERE id = $1`,
-        [id]
-      );
+      await pool.query(`UPDATE job_cards SET end_time = NOW() WHERE id = $1`, [
+        id,
+      ]);
     }
 
     res.json({ message: "Status updated successfully" });
@@ -311,7 +315,6 @@ export const updateJobStatus = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 export const addJobTask = async (req, res) => {
   try {
@@ -376,7 +379,9 @@ export const addJobPart = async (req, res) => {
     );
 
     if (inventoryRes.rows.length === 0) {
-      return res.status(400).json({ message: "Part not available in inventory" });
+      return res
+        .status(400)
+        .json({ message: "Part not available in inventory" });
     }
 
     const availableQty = inventoryRes.rows[0].quantity;
@@ -429,7 +434,6 @@ export const addJobPart = async (req, res) => {
     res.status(500).json({ message: "Failed to add part" });
   }
 };
-
 
 export const saveJobNotes = async (req, res) => {
   try {

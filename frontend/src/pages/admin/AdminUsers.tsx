@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { useEffect, useState } from "react";
 import axios from "axios";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const AdminUsers = () => {
@@ -11,10 +11,9 @@ const AdminUsers = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       const token = localStorage.getItem("token");
-      const res = await axios.get(
-        "http://localhost:5000/api/admin/users",
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.get("http://localhost:5000/api/admin/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setUsers(res.data);
     };
     fetchUsers();
@@ -31,7 +30,6 @@ const AdminUsers = () => {
   return (
     <DashboardLayout role="admin">
       <div className="p-6 space-y-4">
-
         <h1 className="text-2xl font-bold">Customers</h1>
 
         {/* Search Input */}

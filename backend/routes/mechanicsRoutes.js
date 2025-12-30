@@ -1,20 +1,20 @@
 import express from "express";
 import {
-  getMechanicProfile,
-  updateMechanicProfile,
-  requestServiceCenter ,
-  getServiceCenters ,
-  getMyServiceCenterRequests ,
-  getMyJobCards, 
-  getMyJobCardDetail,
-  updateJobStatus,
-  addJobTask,
   addJobPart,
-  saveJobNotes,
+  addJobTask,
+  completeJobTask,
   generateInvoice,
   getAvailableParts,
-  completeJobTask,
-  getMechanicSchedule 
+  getMechanicProfile,
+  getMechanicSchedule,
+  getMyJobCardDetail,
+  getMyJobCards,
+  getMyServiceCenterRequests,
+  getServiceCenters,
+  requestServiceCenter,
+  saveJobNotes,
+  updateJobStatus,
+  updateMechanicProfile,
 } from "../controllers/mechanicsController.js";
 
 import { authenticateUser } from "../middleware/authMiddleware.js";
@@ -40,53 +40,58 @@ const mechanicOnly = (req, res, next) => {
  * GET mechanic profile
  * GET /api/mechanic/profile
  */
-router.get(
-  "/profile",
-  authenticateUser,
-  mechanicOnly,
-  getMechanicProfile
-);
+router.get("/profile", authenticateUser, mechanicOnly, getMechanicProfile);
 
 /**
  * UPDATE mechanic profile
  * PUT /api/mechanic/profile
  */
-router.put(
-  "/profile",
-  authenticateUser,
-  mechanicOnly,
-  updateMechanicProfile
-);
+router.put("/profile", authenticateUser, mechanicOnly, updateMechanicProfile);
 
 /**
  * List all service centers
  * + show my request status
  */
 // 🔹 List all service centers + request status
-router.get("/request-center", authenticateUser, mechanicOnly, getServiceCenters);
-
-// 🔹 Request a service center
-router.post("/request-center/:id", authenticateUser, mechanicOnly, requestServiceCenter);
-
-// 🔹 Get my requests
-router.get("/my-requests", authenticateUser, mechanicOnly, getMyServiceCenterRequests);
-
-router.get("/job-cards", authenticateUser,mechanicOnly, getMyJobCards);
-router.get("/job-cards/:id", authenticateUser,mechanicOnly,getMyJobCardDetail);
-router.patch("/job-cards/:id/status", authenticateUser,mechanicOnly, updateJobStatus);
-router.post(
-  "/job-cards/:id/tasks",
+router.get(
+  "/request-center",
   authenticateUser,
   mechanicOnly,
-   addJobTask
+  getServiceCenters
 );
 
+// 🔹 Request a service center
 router.post(
-  "/job-cards/:id/parts",
+  "/request-center/:id",
   authenticateUser,
   mechanicOnly,
- addJobPart
-    );
+  requestServiceCenter
+);
+
+// 🔹 Get my requests
+router.get(
+  "/my-requests",
+  authenticateUser,
+  mechanicOnly,
+  getMyServiceCenterRequests
+);
+
+router.get("/job-cards", authenticateUser, mechanicOnly, getMyJobCards);
+router.get(
+  "/job-cards/:id",
+  authenticateUser,
+  mechanicOnly,
+  getMyJobCardDetail
+);
+router.patch(
+  "/job-cards/:id/status",
+  authenticateUser,
+  mechanicOnly,
+  updateJobStatus
+);
+router.post("/job-cards/:id/tasks", authenticateUser, mechanicOnly, addJobTask);
+
+router.post("/job-cards/:id/parts", authenticateUser, mechanicOnly, addJobPart);
 
 router.patch(
   "/job-cards/:id/notes",
@@ -95,7 +100,12 @@ router.patch(
   saveJobNotes
 );
 
-router.post("/job-cards/:id/invoice",authenticateUser, mechanicOnly,generateInvoice);
+router.post(
+  "/job-cards/:id/invoice",
+  authenticateUser,
+  mechanicOnly,
+  generateInvoice
+);
 
 router.get(
   "/job-cards/:id/tasks",
@@ -140,11 +150,6 @@ router.patch(
   completeJobTask
 );
 
-router.get(
-  "/schedule",
-  authenticateUser,
-  mechanicOnly,
-  getMechanicSchedule
-);
+router.get("/schedule", authenticateUser, mechanicOnly, getMechanicSchedule);
 
-export default router; 
+export default router;
