@@ -67,15 +67,15 @@ const Landing = () => {
               style={{ animationDelay: `${i * 0.1}s` }}
             />
           ))}
-        </div>
+        </div>               
 
         <div className="container mx-auto px-4 relative z-10 flex flex-col items-center justify-center h-full">
           <div className="max-w-4xl text-center">
-            {/* Line 1 */}
+            {/* Line 1   */}
             <h1 className="text-4xl md:text-5xl font-bold text-white">
               SMART VEHICLE MAINTENANCE
             </h1>
-            {/* Line 2 */}
+            {/* Line 2  */}
             <h1 className="text-4xl md:text-5xl font-bold text-white mt-3">
               AND SERVICE MANAGEMENT SYSTEM
             </h1>
