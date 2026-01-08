@@ -144,12 +144,13 @@ export const approveBooking = async (req, res) => {
       [req.user.id, id]
     );
 
-    await client.query(
+    const jobCardRes = await client.query(
       `
-      INSERT INTO job_cards
-      (booking_id, service_center_id, vehicle_id, customer_id, assigned_mechanic, status)
-      VALUES ($1, $2, $3, $4, $5, 'open')
-      `,
+  INSERT INTO job_cards
+  (booking_id, service_center_id, vehicle_id, customer_id, assigned_mechanic, status)
+  VALUES ($1, $2, $3, $4, $5, 'open')
+  RETURNING id
+  `,
       [
         booking.id,
         booking.service_center_id,
@@ -158,6 +159,8 @@ export const approveBooking = async (req, res) => {
         mechanic_id || null,
       ]
     );
+
+    const jobCardId = jobCardRes.rows[0].id;
 
     // ✅ ADD THIS HERE
     if (mechanic_id) {
@@ -176,7 +179,11 @@ export const approveBooking = async (req, res) => {
 
     await client.query("COMMIT");
 
-    res.json({ message: "Booking approved & job card created" });
+    res.status(201).json({
+  message: "Booking approved & job card created",
+  job_card_id: jobCardId
+});
+
   } catch (err) {
     await client.query("ROLLBACK");
     console.error(err);
