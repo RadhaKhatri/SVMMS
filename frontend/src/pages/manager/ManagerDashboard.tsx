@@ -85,9 +85,10 @@ const ManagerDashboard = () => {
   };
 
   const approveBooking = async () => {
-    if (!selectedBooking || !selectedMechanic) return;
+  if (!selectedBooking || !selectedMechanic) return;
 
-    await axios.post(
+  try {
+    const res = await axios.post(
       `http://localhost:5000/api/manager/bookings/${selectedBooking.id}/approve`,
       { mechanic_id: selectedMechanic },
       {
@@ -97,11 +98,31 @@ const ManagerDashboard = () => {
       }
     );
 
+    const jobCardId = res.data.job_card_id;
+
+    toast({
+      title: "Job Card Created",
+      description: "Booking approved successfully",
+    });
+
+    // reset state
     setSelectedBooking(null);
     setSelectedMechanic(null);
+
     fetchPendingBookings();
-    await fetchMechanics();
-  };
+    fetchMechanics();
+
+    // ✅ THIS IS THE ONLY NAVIGATION YOU NEED
+    navigate(`/manager/job-cards/${jobCardId}`);
+  } catch (error) {
+    toast({
+      title: "Error",
+      description: "Failed to approve booking",
+      variant: "destructive",
+    });
+  }
+};
+  
   const [stats, setStats] = useState({
     pending: 0,
     activeMechanics: 0,
